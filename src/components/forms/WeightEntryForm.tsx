@@ -39,7 +39,7 @@ export default function WeightEntryForm() {
     formState: { errors },
     reset,
   } = useForm<WeightEntryFormData>({
-    resolver: zodResolver(weightEntrySchema),
+    resolver: zodResolver(weightEntrySchema) as any,
     defaultValues: {
       entry_date: date,
       entry_time: time,

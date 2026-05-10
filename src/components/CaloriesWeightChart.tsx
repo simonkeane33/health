@@ -32,7 +32,7 @@ ChartJS.register(
 
 interface Props {
   summaries: DailySummary[];
-  range: '7' | '14' | '30' | '90' | '365';
+  range: '7' | '14' | '30' | '90' | '365' | 'all';
   theme: 'light' | 'dark';
 }
 
