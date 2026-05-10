@@ -120,13 +120,38 @@ export const DailySummarySchema = z.object({
   source: requiredString(),
 });
 
+export const ExerciseEntrySchema = z.object({
+  id: requiredString(),
+  entry_type: z.literal('exercise_entry'),
+  logged_at: requiredString(),
+  entry_date: requiredString(),
+  activity_type: requiredString(),
+  source: requiredString(),
+  source_channel: optionalString(),
+  distance_km: optionalNumber(),
+  calories_burned: optionalNumber(),
+  moving_time: optionalString(),
+  elapsed_time: optionalString(),
+  avg_hr: optionalNumber(),
+  max_hr: optionalNumber(),
+  total_ascent_m: optionalNumber(),
+  total_descent_m: optionalNumber(),
+  avg_speed: optionalNumber(),
+  max_speed: optionalNumber(),
+  course_or_route: optionalString(),
+  needs_review: optionalBoolean().default(false),
+  review_status: requiredString().default('pending'),
+});
+
 export const VaultEntrySchema = z.union([
   FoodEntrySchema,
   WeightEntrySchema,
   DailySummarySchema,
+  ExerciseEntrySchema,
 ]);
 
 export type FoodEntry = z.infer<typeof FoodEntrySchema>;
 export type WeightEntry = z.infer<typeof WeightEntrySchema>;
 export type DailySummary = z.infer<typeof DailySummarySchema>;
+export type ExerciseEntry = z.infer<typeof ExerciseEntrySchema>;
 export type VaultEntry = z.infer<typeof VaultEntrySchema>;

@@ -13,6 +13,7 @@ import { ReviewQueue } from '@/components/ReviewQueue';
 import { RecentEntries } from '@/components/RecentEntries';
 import { FrequentFoods } from '@/components/FrequentFoods';
 import { DailySummaries } from '@/components/DailySummaries';
+import { ExerciseCard } from '@/components/ExerciseCard';
 import { useTheme } from '@/components/ThemeProvider';
 
 type RangeValue = '7' | '14' | '30' | '90' | '365' | 'all';
@@ -23,7 +24,7 @@ export default function Home() {
   const [range, setRange] = useState<RangeValue>('30');
 
   const loadStatus = data
-    ? `${data.foodEntries.length} food, ${data.weightEntries.length} weight, ${data.dailySummaries.length} days`
+    ? `${data.foodEntries.length} food, ${data.weightEntries.length} weight, ${data.exerciseEntries.length} exercise, ${data.dailySummaries.length} days`
     : 'No notes loaded yet.';
 
   const sidebarProps = {
@@ -109,6 +110,8 @@ export default function Home() {
                   </Card>
 
                   <KpiGrid data={data} />
+
+                  <ExerciseCard entries={data.exerciseEntries} />
 
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between gap-4">

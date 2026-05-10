@@ -3,12 +3,13 @@
 import { useState, useCallback } from 'react';
 import { parseVaultFile } from '@/lib/parser';
 import { aggregateDailySummaries } from '@/lib/aggregator';
-import type { FoodEntry, WeightEntry, DailySummary, VaultEntry } from '@/lib/schemas';
+import type { FoodEntry, WeightEntry, DailySummary, VaultEntry, ExerciseEntry } from '@/lib/schemas';
 
 export interface VaultData {
   foodEntries: FoodEntry[];
   weightEntries: WeightEntry[];
   dailySummaries: DailySummary[];
+  exerciseEntries: ExerciseEntry[];
   allEntries: VaultEntry[];
 }
 
@@ -34,6 +35,7 @@ export function useVaultData() {
       const foodEntries: FoodEntry[] = [];
       const weightEntries: WeightEntry[] = [];
       const dailySummaries: DailySummary[] = [];
+      const exerciseEntries: ExerciseEntry[] = [];
 
       for (const file of mdFiles) {
         const text = await file.text();
@@ -43,6 +45,7 @@ export function useVaultData() {
         if (entry.entry_type === 'food_entry') foodEntries.push(entry);
         else if (entry.entry_type === 'weight_entry') weightEntries.push(entry);
         else if (entry.entry_type === 'daily_summary') dailySummaries.push(entry);
+        else if (entry.entry_type === 'exercise_entry') exerciseEntries.push(entry);
       }
 
       const sortByDate = (a: { entry_date: string }, b: { entry_date: string }) =>
@@ -50,6 +53,7 @@ export function useVaultData() {
 
       foodEntries.sort(sortByDate);
       weightEntries.sort(sortByDate);
+      exerciseEntries.sort(sortByDate);
 
       const mergedSummaries = aggregateDailySummaries(foodEntries, weightEntries, dailySummaries);
 
@@ -57,7 +61,8 @@ export function useVaultData() {
         foodEntries,
         weightEntries,
         dailySummaries: mergedSummaries,
-        allEntries: [...foodEntries, ...weightEntries, ...mergedSummaries],
+        exerciseEntries,
+        allEntries: [...foodEntries, ...weightEntries, ...mergedSummaries, ...exerciseEntries],
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load vault files');

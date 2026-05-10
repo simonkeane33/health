@@ -63,11 +63,35 @@ export interface DailySummary {
   source: string;
 }
 
-export type VaultEntry = WeightEntry | FoodEntry | DailySummary;
+export interface ExerciseEntry {
+  id: string;
+  entry_type: 'exercise_entry';
+  logged_at: string;
+  entry_date: string;
+  activity_type: string;
+  source: string;
+  source_channel?: string;
+  distance_km?: number;
+  calories_burned?: number;
+  moving_time?: string;
+  elapsed_time?: string;
+  avg_hr?: number;
+  max_hr?: number;
+  total_ascent_m?: number;
+  total_descent_m?: number;
+  avg_speed?: number;
+  max_speed?: number;
+  course_or_route?: string;
+  needs_review: boolean;
+  review_status: string;
+}
+
+export type VaultEntry = WeightEntry | FoodEntry | DailySummary | ExerciseEntry;
 
 export interface VaultData {
   foodEntries: FoodEntry[];
   weightEntries: WeightEntry[];
   dailySummaries: DailySummary[];
+  exerciseEntries: ExerciseEntry[];
   allEntries: VaultEntry[];
 }

@@ -1,6 +1,6 @@
 import * as yaml from 'js-yaml';
-import { FoodEntrySchema, WeightEntrySchema, DailySummarySchema } from './schemas';
-import type { FoodEntry, WeightEntry, DailySummary, VaultEntry } from './schemas';
+import { FoodEntrySchema, WeightEntrySchema, DailySummarySchema, ExerciseEntrySchema } from './schemas';
+import type { FoodEntry, WeightEntry, DailySummary, ExerciseEntry, VaultEntry } from './schemas';
 
 /* ------------------------------------------------------------------ */
 /* Front-matter extraction                                              */
@@ -41,6 +41,11 @@ export function parseDailySummary(data: Record<string, unknown>): DailySummary |
   return result.success ? result.data : null;
 }
 
+export function parseExerciseEntry(data: Record<string, unknown>): ExerciseEntry | null {
+  const result = ExerciseEntrySchema.safeParse(data);
+  return result.success ? result.data : null;
+}
+
 /* ------------------------------------------------------------------ */
 /* Auto-dispatch parser by entry_type                                 */
 /* ------------------------------------------------------------------ */
@@ -50,6 +55,7 @@ export function parseVaultEntry(data: Record<string, unknown>): VaultEntry | nul
   if (entryType === 'food_entry') return parseFoodEntry(data);
   if (entryType === 'weight_entry') return parseWeightEntry(data);
   if (entryType === 'daily_summary') return parseDailySummary(data);
+  if (entryType === 'exercise_entry') return parseExerciseEntry(data);
   return null;
 }
 
