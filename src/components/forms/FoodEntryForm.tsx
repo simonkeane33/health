@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import yaml from 'js-yaml';
 import { foodEntrySchema, type FoodEntryFormData } from '@/schema/entrySchemas';
@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import {
   Select,
@@ -18,6 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'drink'] as const;
 
@@ -32,25 +39,37 @@ function makeId(prefix: string, date: string) {
   return `${prefix}-${date}-${Date.now().toString(36)}`;
 }
 
+function toFrontmatterNumber(val: string | number | null | undefined): number | undefined {
+  if (val === '' || val === undefined || val === null) return undefined;
+  const num = typeof val === 'string' ? parseFloat(val) : Number(val);
+  return Number.isNaN(num) ? undefined : num;
+}
+
+const NUMERIC_FIELDS = [
+  'estimated_calories',
+  'protein_g',
+  'carbs_g',
+  'fat_g',
+  'fiber_g',
+  'sugar_g',
+  'fluids_ml',
+  'alcohol_units',
+] as const;
+
 export default function FoodEntryForm() {
   const { date, time } = nowLocalInputs();
   const [submitted, setSubmitted] = useState(false);
 
-  const {
-    register,
-    control,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<FoodEntryFormData>({
-    resolver: zodResolver(foodEntrySchema) as any,
+  const form = useForm<FoodEntryFormData>({
+    resolver: zodResolver(foodEntrySchema),
     defaultValues: {
       entry_date: date,
       entry_time: time,
-      confidence: 0.8,
-      needs_review: false,
       meal_type: 'snack',
       items: '',
+      confidence: 0.8,
+      needs_review: false,
+      notes: '',
     },
   });
 
@@ -62,7 +81,7 @@ export default function FoodEntryForm() {
         .map((s) => s.trim())
         .filter(Boolean);
 
-      const frontmatter = {
+      const frontmatter: Record<string, unknown> = {
         id: makeId('food', data.entry_date),
         entry_type: 'food_entry',
         logged_at: loggedAt,
@@ -71,21 +90,24 @@ export default function FoodEntryForm() {
         source: 'hermes',
         source_channel: 'health_dashboard',
         items,
-        estimated_calories: data.estimated_calories ?? undefined,
-        protein_g: data.protein_g ?? undefined,
-        carbs_g: data.carbs_g ?? undefined,
-        fat_g: data.fat_g ?? undefined,
-        fiber_g: data.fiber_g ?? undefined,
-        sugar_g: data.sugar_g ?? undefined,
-        fluids_ml: data.fluids_ml ?? undefined,
-        alcohol_units: data.alcohol_units ?? undefined,
         confidence: data.confidence,
         needs_review: data.needs_review,
         review_status: data.needs_review ? 'pending' : 'confirmed',
         user_confirmed: !data.needs_review,
-        notes: data.notes ?? undefined,
         tags: ['health', 'intake', 'food'],
       };
+
+      for (const key of NUMERIC_FIELDS) {
+        const raw = data[key as keyof FoodEntryFormData];
+        const num = toFrontmatterNumber(raw as string | number | null | undefined);
+        if (num !== undefined && num !== null) {
+          frontmatter[key] = num;
+        }
+      }
+
+      if (data.notes) {
+        frontmatter.notes = data.notes;
+      }
 
       const md = `---\n${yaml.dump(frontmatter, { noRefs: true, lineWidth: -1 }).trim()}\n---\n\n# Food entry\n\n## Agent summary\n\n${items.join(', ')}\n\n## User correction\n\n## Raw extraction\n`;
 
@@ -100,171 +122,199 @@ export default function FoodEntryForm() {
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 3000);
 
-      reset({
-        entry_date: date,
-        entry_time: time,
-        confidence: 0.8,
-        needs_review: false,
+      form.reset({
+        entry_date: nowLocalInputs().date,
+        entry_time: nowLocalInputs().time,
         meal_type: 'snack',
         items: '',
+        confidence: 0.8,
+        needs_review: false,
+        notes: '',
       });
     },
-    [date, time, reset]
+    [form]
   );
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      {/* Date + Time */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="entry_date" className="text-xs text-[#68655f]">
-            Date
-          </Label>
-          <Input id="entry_date" type="date" {...register('entry_date')} />
-          {errors.entry_date && (
-            <p className="text-xs text-destructive">{errors.entry_date.message}</p>
-          )}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        {/* Date + Time */}
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="entry_date"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs text-muted-foreground">Date</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="entry_time"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-xs text-muted-foreground">Time</FormLabel>
+                <FormControl>
+                  <Input type="time" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="entry_time" className="text-xs text-[#68655f]">
-            Time
-          </Label>
-          <Input id="entry_time" type="time" {...register('entry_time')} />
-          {errors.entry_time && (
-            <p className="text-xs text-destructive">{errors.entry_time.message}</p>
-          )}
-        </div>
-      </div>
 
-      {/* Meal type */}
-      <div className="flex flex-col gap-1.5">
-        <Label className="text-xs text-[#68655f]">Meal type</Label>
-        <Controller
+        {/* Meal type */}
+        <FormField
+          control={form.control}
           name="meal_type"
-          control={control}
           render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger id="meal_type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MEAL_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FormItem>
+              <FormLabel className="text-xs text-muted-foreground">Meal type</FormLabel>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select meal type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {MEAL_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
           )}
         />
-        {errors.meal_type && (
-          <p className="text-xs text-destructive">{errors.meal_type.message}</p>
-        )}
-      </div>
 
-      {/* Items */}
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="items" className="text-xs text-[#68655f]">
-          Items (one per line or comma-separated)
-        </Label>
-        <Textarea
-          id="items"
-          rows={3}
-          placeholder="e.g. grilled chicken, rice, broccoli"
-          {...register('items')}
+        {/* Items */}
+        <FormField
+          control={form.control}
+          name="items"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs text-muted-foreground">
+                Items (one per line or comma-separated)
+              </FormLabel>
+              <FormControl>
+                <Textarea
+                  rows={3}
+                  placeholder="e.g. grilled chicken, rice, broccoli"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        {errors.items && (
-          <p className="text-xs text-destructive">{errors.items.message}</p>
-        )}
-      </div>
 
-      {/* Macros */}
-      <div className="grid grid-cols-3 gap-3">
-        {(
-          [
-            'estimated_calories',
-            'protein_g',
-            'carbs_g',
-            'fat_g',
-            'fiber_g',
-            'sugar_g',
-            'fluids_ml',
-            'alcohol_units',
-          ] as const
-        ).map((field) => (
-          <div key={field} className="flex flex-col gap-1.5">
-            <Label htmlFor={field} className="text-xs text-[#68655f] capitalize">
-              {field.replace(/_/g, ' ')}
-            </Label>
-            <Input
-              id={field}
-              type="number"
-              step="0.1"
-              placeholder="0"
-              {...register(field)}
+        {/* Macros */}
+        <div className="grid grid-cols-3 gap-3">
+          {NUMERIC_FIELDS.map((fieldName) => (
+            <FormField
+              key={fieldName}
+              control={form.control}
+              name={fieldName}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs text-muted-foreground capitalize">
+                    {fieldName.replace(/_/g, ' ')}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder="0"
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      {/* Confidence slider */}
-      <div className="flex flex-col gap-2">
-        <Controller
+        {/* Confidence slider */}
+        <FormField
+          control={form.control}
           name="confidence"
-          control={control}
           render={({ field }) => (
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs text-[#68655f]">
+            <FormItem className="flex flex-col gap-2">
+              <FormLabel className="text-xs text-muted-foreground">
                 Confidence: {(field.value ?? 0.8).toFixed(2)}
-              </Label>
-              <Slider
-                value={[field.value ?? 0.8]}
-                onValueChange={([v]) => field.onChange(v)}
-                min={0}
-                max={1}
-                step={0.05}
-              />
-            </div>
+              </FormLabel>
+              <FormControl>
+                <Slider
+                  value={[field.value ?? 0.8]}
+                  onValueChange={([v]) => field.onChange(v)}
+                  min={0}
+                  max={1}
+                  step={0.05}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
-        {errors.confidence && (
-          <p className="text-xs text-destructive">{errors.confidence.message}</p>
-        )}
-      </div>
 
-      {/* Needs review */}
-      <div className="flex items-center gap-2">
-        <Controller
+        {/* Needs review */}
+        <FormField
+          control={form.control}
           name="needs_review"
-          control={control}
           render={({ field }) => (
-            <Checkbox
-              id="needs_review"
-              checked={field.value}
-              onCheckedChange={field.onChange}
-            />
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+              <FormControl>
+                <Checkbox
+                  checked={field.value ?? false}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormLabel className="text-xs text-muted-foreground font-normal cursor-pointer">
+                Needs review
+              </FormLabel>
+              <FormMessage />
+            </FormItem>
           )}
         />
-        <Label htmlFor="needs_review" className="text-xs text-[#68655f] cursor-pointer">
-          Needs review
-        </Label>
-      </div>
 
-      {/* Notes */}
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="notes" className="text-xs text-[#68655f]">
-          Notes
-        </Label>
-        <Textarea id="notes" rows={2} placeholder="optional" {...register('notes')} />
-      </div>
+        {/* Notes */}
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs text-muted-foreground">Notes</FormLabel>
+              <FormControl>
+                <Textarea
+                  rows={2}
+                  placeholder="optional"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      {/* Submit */}
-      <div className="flex items-center gap-3 pt-1">
-        <Button type="submit" className="bg-[#01696f] hover:bg-[#014d52]">
-          Download .md entry
-        </Button>
-        {submitted && <span className="text-xs text-[#01696f]">Downloaded!</span>}
-      </div>
-    </form>
+        {/* Submit */}
+        <div className="flex items-center gap-3 pt-1">
+          <Button type="submit">
+            Download .md entry
+          </Button>
+          {submitted && (
+            <span className="text-xs text-[#01696f]">Downloaded!</span>
+          )}
+        </div>
+      </form>
+    </Form>
   );
 }

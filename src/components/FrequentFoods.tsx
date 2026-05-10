@@ -33,8 +33,8 @@ export function FrequentFoods({ entries, limit = 8 }: Props) {
               <Salad className="w-5 h-5" />
             </div>
             <div>
-              <strong className="text-[#28251d] block mb-0.5">No recurring foods yet.</strong>
-              <span className="text-sm text-[#68655f]">Keep tracking to see what shows up most.</span>
+              <strong className="text-[var(--hv-text)] block mb-0.5">No recurring foods yet.</strong>
+              <span className="text-sm text-[var(--hv-text-muted)]">Keep tracking to see what shows up most.</span>
             </div>
           </div>
         </div>
@@ -53,10 +53,10 @@ export function FrequentFoods({ entries, limit = 8 }: Props) {
           {sorted.map(([name, count]) => (
             <li
               key={name}
-              className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-[#f3f0ec]"
+              className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-[var(--hv-surface-offset)]"
             >
-              <span className="text-sm text-[#28251d]">{name}</span>
-              <strong className="text-sm tabular-nums text-[#28251d]">{count}</strong>
+              <span className="text-sm text-[var(--hv-text)]">{name}</span>
+              <strong className="text-sm tabular-nums text-[var(--hv-text)]">{count}</strong>
             </li>
           ))}
         </ul>

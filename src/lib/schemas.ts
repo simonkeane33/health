@@ -16,9 +16,18 @@ const optionalNumber = () =>
     .optional();
 
 const requiredString = () =>
-  z.union([z.string(), z.number(), z.null()]).transform((v) => (v == null ? '' : String(v)));
+  z
+    .union([z.string(), z.number(), z.date(), z.null()])
+    .transform((v) => {
+      if (v == null) return '';
+      if (v instanceof Date) return v.toISOString().split('T')[0];
+      return String(v);
+    });
 
-const optionalString = () => z.string().optional();
+const optionalString = () =>
+  z.union([z.string(), z.null()])
+    .transform((v) => (v === null || v === undefined ? undefined : String(v)))
+    .optional();
 
 const optionalBoolean = () =>
   z

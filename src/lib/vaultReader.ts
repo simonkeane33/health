@@ -24,7 +24,7 @@ export async function readVaultDir(dirPath: string): Promise<VaultReadResult> {
   let files: string[];
   try {
     files = await fs.readdir(dirPath);
-  } catch (err) {
+  } catch {
     return {
       foodEntries,
       weightEntries,
@@ -46,8 +46,8 @@ export async function readVaultDir(dirPath: string): Promise<VaultReadResult> {
       if (entry.entry_type === 'food_entry') foodEntries.push(entry);
       else if (entry.entry_type === 'weight_entry') weightEntries.push(entry);
       else if (entry.entry_type === 'daily_summary') dailySummaries.push(entry);
-    } catch (err) {
-      errors.push(`Failed to read ${fileName}: ${err instanceof Error ? err.message : String(err)}`);
+    } catch {
+      errors.push(`Failed to read ${fileName}`);
     }
   }
 

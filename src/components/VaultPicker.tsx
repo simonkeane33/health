@@ -1,6 +1,5 @@
 'use client';
 
-import { useRef } from 'react';
 import { FolderOpen } from 'lucide-react';
 
 interface Props {
@@ -8,8 +7,6 @@ interface Props {
 }
 
 export function VaultPicker({ onPick }: Props) {
-  const inputRef = useRef<HTMLInputElement>(null);
-
   return (
     <div className="flex flex-col items-center gap-4 p-8 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50/50">
       <FolderOpen className="w-10 h-10 text-slate-400" />

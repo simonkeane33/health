@@ -53,7 +53,7 @@ export default function Home() {
 
   if (!data) {
     return (
-      <div className="grid grid-cols-[300px_minmax(0,1fr)] min-h-[100dvh]">
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] min-h-[100dvh]">
         <div className="hidden lg:block">
           <Sidebar {...sidebarProps} />
         </div>
@@ -63,7 +63,7 @@ export default function Home() {
             <span className="font-semibold">Health Vault</span>
           </div>
           <Card className="overflow-hidden bg-gradient-to-br from-primary/[6%] to-card">
-            <CardContent className="grid grid-cols-[1.4fr_1fr] items-end gap-6 p-[clamp(1.25rem,2vw,2rem)]">
+            <CardContent className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr] items-end gap-6 p-[clamp(1.25rem,2vw,2rem)]">
               <div className="space-y-4">
                 <Badge variant="secondary" className="rounded-full bg-secondary/80 border border-border">
                   <span className="w-2 h-2 rounded-full bg-primary inline-block mr-1"></span>
@@ -84,7 +84,7 @@ export default function Home() {
   }
 
   return (
-    <div className="grid grid-cols-[300px_minmax(0,1fr)] min-h-[100dvh]">
+    <div className="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] min-h-[100dvh]">
       <div className="hidden lg:block">
         <Sidebar {...sidebarProps} />
       </div>
@@ -96,7 +96,7 @@ export default function Home() {
 
         {/* Hero */}
         <Card className="overflow-hidden bg-gradient-to-br from-primary/[6%] to-card border border-border ring-1 ring-foreground/5">
-          <CardContent className="grid grid-cols-[1.4fr_1fr] items-end gap-6 p-[clamp(1.25rem,2vw,2rem)]">
+          <CardContent className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr] items-end gap-6 p-[clamp(1.25rem,2vw,2rem)]">
             <div className="space-y-4">
               <Badge variant="secondary" className="rounded-full bg-secondary/80 border border-border">
                 <span className="w-2 h-2 rounded-full bg-primary inline-block mr-1"></span>
@@ -141,14 +141,14 @@ export default function Home() {
             <span className="text-muted-foreground text-sm">{range === 'all' ? 'All time' : range === '365' ? 'Last year' : `Last ${range} days`}</span>
           </CardHeader>
           <CardContent>
-            <div className="h-[320px] relative">
+            <div className="relative h-80">
               <CaloriesWeightChart summaries={data.dailySummaries} range={range} theme={theme} />
             </div>
           </CardContent>
         </Card>
 
         {/* Content grid */}
-        <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)] gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)] gap-4">
           <div className="flex flex-col gap-4 min-w-0">
             <RecentEntries entries={data.foodEntries} />
             <DailySummaries entries={data.dailySummaries} />

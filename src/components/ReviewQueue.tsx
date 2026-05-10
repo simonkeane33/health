@@ -72,15 +72,15 @@ function ReviewItem({
   };
 
   return (
-    <li className="flex items-start gap-3 p-3 rounded-xl bg-[rgba(150,66,25,0.06)] border border-[rgba(150,66,25,0.10)]">
+    <li className="flex items-start gap-3 p-3 rounded-xl bg-[var(--hv-surface-offset)] border border-[var(--hv-border)]">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[#28251d] truncate">
+        <p className="text-sm font-medium text-[var(--hv-text)] truncate">
           {entry.items.join(', ')}
         </p>
-        <p className="text-xs text-[#9a9891] mt-0.5">
+        <p className="text-xs text-[var(--hv-text-faint)] mt-0.5">
           {formatDateTime(entry.logged_at || entry.entry_date)} · confidence {Number(entry.confidence).toFixed(2)}
         </p>
-        <p className="text-xs text-[#9a9891] mt-0.5">
+        <p className="text-xs text-[var(--hv-text-faint)] mt-0.5">
           {entry.estimated_calories} kcal · {entry.meal_type}
         </p>
       </div>
@@ -114,8 +114,8 @@ function NoItems() {
         <AlertCircle className="w-5 h-5" />
       </div>
       <div>
-        <strong className="text-[#28251d] block mb-0.5">Nothing in review</strong>
-        <span className="text-sm text-[#68655f]">All current entries look settled.</span>
+        <strong className="text-[var(--hv-text)] block mb-0.5">Nothing in review</strong>
+        <span className="text-sm text-[var(--hv-text-muted)]">All current entries look settled.</span>
       </div>
     </div>
   );

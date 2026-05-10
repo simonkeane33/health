@@ -10,7 +10,7 @@ interface Props {
   onReviewChange?: (id: string, confirmed: boolean) => void;
 }
 
-export function RecentEntries({ entries, limit = 8, onReviewChange }: Props) {
+export function RecentEntries({ entries, limit = 8 }: Props) {
   const sorted = [...entries]
     .sort((a, b) => new Date(b.logged_at || b.entry_date).getTime() - new Date(a.logged_at || a.entry_date).getTime())
     .slice(0, limit);
@@ -37,30 +37,30 @@ export function RecentEntries({ entries, limit = 8, onReviewChange }: Props) {
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr>
-              <th className="text-left text-[11px] uppercase tracking-wider text-[#68655f] font-medium py-2.5 px-2 border-b border-[rgba(40,37,29,0.12)]">When</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-[#68655f] font-medium py-2.5 px-2 border-b border-[rgba(40,37,29,0.12)]">Type</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-[#68655f] font-medium py-2.5 px-2 border-b border-[rgba(40,37,29,0.12)]">Items</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-[#68655f] font-medium py-2.5 px-2 border-b border-[rgba(40,37,29,0.12)]">Energy</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-[#68655f] font-medium py-2.5 px-2 border-b border-[rgba(40,37,29,0.12)]">Status</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-[var(--hv-text-muted)] font-medium py-2.5 px-2 border-b border-[var(--hv-border)]">When</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-[var(--hv-text-muted)] font-medium py-2.5 px-2 border-b border-[var(--hv-border)]">Type</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-[var(--hv-text-muted)] font-medium py-2.5 px-2 border-b border-[var(--hv-border)]">Items</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-[var(--hv-text-muted)] font-medium py-2.5 px-2 border-b border-[var(--hv-border)]">Energy</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-[var(--hv-text-muted)] font-medium py-2.5 px-2 border-b border-[var(--hv-border)]">Status</th>
             </tr>
           </thead>
           <tbody>
             {sorted.map((entry) => (
               <tr key={entry.id}>
-                <td className="py-3 px-2 border-b border-[rgba(40,37,29,0.08)] text-[#28251d] whitespace-nowrap">
+                <td className="py-3 px-2 border-b border-[var(--hv-border)] text-[var(--hv-text)] whitespace-nowrap">
                   {formatDateTime(entry.logged_at || entry.entry_date)}
                 </td>
-                <td className="py-3 px-2 border-b border-[rgba(40,37,29,0.08)] text-[#28251d]">
+                <td className="py-3 px-2 border-b border-[var(--hv-border)] text-[var(--hv-text)]">
                   {entry.meal_type || '—'}
                 </td>
-                <td className="py-3 px-2 border-b border-[rgba(40,37,29,0.08)] text-[#28251d]">
+                <td className="py-3 px-2 border-b border-[var(--hv-border)] text-[var(--hv-text)]">
                   {entry.items.join(', ')}
                 </td>
-                <td className="py-3 px-2 border-b border-[rgba(40,37,29,0.08)] text-[#28251d]">
+                <td className="py-3 px-2 border-b border-[var(--hv-border)] text-[var(--hv-text)]">
                   <strong className="tabular-nums">{formatNumber(entry.estimated_calories || 0, 0)}</strong>{' '}
-                  <span className="text-[#68655f]">kcal</span>
+                  <span className="text-[var(--hv-text-muted)]">kcal</span>
                 </td>
-                <td className="py-3 px-2 border-b border-[rgba(40,37,29,0.08)] text-[#28251d]">
+                <td className="py-3 px-2 border-b border-[var(--hv-border)] text-[var(--hv-text)]">
                   {entry.needs_review ? (
                     <span className="pill warn">Needs review</span>
                   ) : (
@@ -78,12 +78,12 @@ export function RecentEntries({ entries, limit = 8, onReviewChange }: Props) {
 
 function EmptyState({ title, body }: { title: string; body: string }) {
   return (
-    <div className="flex flex-col gap-3 py-10 text-[#68655f]">
+    <div className="flex flex-col gap-3 py-10 text-[var(--hv-text-muted)]">
       <div className="empty-illustration">
         <UtensilsCrossed className="w-5 h-5" />
       </div>
       <div>
-        <strong className="text-[#28251d] block mb-0.5">{title}</strong>
+        <strong className="text-[var(--hv-text)] block mb-0.5">{title}</strong>
         <span className="text-sm">{body}</span>
       </div>
     </div>

@@ -41,17 +41,17 @@ export function DailySummaries({ entries, limit = 7 }: Props) {
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr>
-              <th className="text-left text-[11px] uppercase tracking-wider text-[#68655f] font-medium py-2.5 px-2 border-b border-[rgba(40,37,29,0.12)]">Day</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-[#68655f] font-medium py-2.5 px-2 border-b border-[rgba(40,37,29,0.12)]">Calories</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-[#68655f] font-medium py-2.5 px-2 border-b border-[rgba(40,37,29,0.12)]">Protein</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-[#68655f] font-medium py-2.5 px-2 border-b border-[rgba(40,37,29,0.12)]">Fluids</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-[#68655f] font-medium py-2.5 px-2 border-b border-[rgba(40,37,29,0.12)]">Weight</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-[var(--hv-text-muted)] font-medium py-2.5 px-2 border-b border-[var(--hv-border)]">Day</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-[var(--hv-text-muted)] font-medium py-2.5 px-2 border-b border-[var(--hv-border)]">Calories</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-[var(--hv-text-muted)] font-medium py-2.5 px-2 border-b border-[var(--hv-border)]">Protein</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-[var(--hv-text-muted)] font-medium py-2.5 px-2 border-b border-[var(--hv-border)]">Fluids</th>
+              <th className="text-left text-[11px] uppercase tracking-wider text-[var(--hv-text-muted)] font-medium py-2.5 px-2 border-b border-[var(--hv-border)]">Weight</th>
             </tr>
           </thead>
           <tbody>
             {days.map((day) => (
               <tr key={day.id}>
-                <td className="py-3 px-2 border-b border-[rgba(40,37,29,0.08)] text-[#28251d] whitespace-nowrap">
+                <td className="py-3 px-2 border-b border-[var(--hv-border)] text-[var(--hv-text)] whitespace-nowrap">
                   {day.entry_date
                     ? new Date(day.entry_date + 'T00:00:00').toLocaleDateString('en-GB', {
                         weekday: 'short',
@@ -60,23 +60,23 @@ export function DailySummaries({ entries, limit = 7 }: Props) {
                       })
                     : '—'}
                 </td>
-                <td className="py-3 px-2 border-b border-[rgba(40,37,29,0.08)] text-[#28251d]">
+                <td className="py-3 px-2 border-b border-[var(--hv-border)] text-[var(--hv-text)]">
                   <strong className="tabular-nums">{formatNumber(day.total_calories ?? 0, 0)}</strong>{' '}
-                  <span className="text-[#68655f]">kcal</span>
+                  <span className="text-[var(--hv-text-muted)]">kcal</span>
                 </td>
-                <td className="py-3 px-2 border-b border-[rgba(40,37,29,0.08)] text-[#28251d]">
+                <td className="py-3 px-2 border-b border-[var(--hv-border)] text-[var(--hv-text)]">
                   {formatNumber(day.protein_g ?? 0, 0)}{' '}
-                  <span className="text-[#68655f]">g</span>
+                  <span className="text-[var(--hv-text-muted)]">g</span>
                 </td>
-                <td className="py-3 px-2 border-b border-[rgba(40,37,29,0.08)] text-[#28251d]">
+                <td className="py-3 px-2 border-b border-[var(--hv-border)] text-[var(--hv-text)]">
                   {formatNumber(day.fluids_ml ?? 0, 0)}{' '}
-                  <span className="text-[#68655f]">ml</span>
+                  <span className="text-[var(--hv-text-muted)]">ml</span>
                 </td>
-                <td className="py-3 px-2 border-b border-[rgba(40,37,29,0.08)] text-[#28251d]">
+                <td className="py-3 px-2 border-b border-[var(--hv-border)] text-[var(--hv-text)]">
                   {day.weight_kg != null ? (
                     <>
                       <strong className="tabular-nums">{formatNumber(day.weight_kg, 1)}</strong>{' '}
-                      <span className="text-[#68655f]">kg</span>
+                      <span className="text-[var(--hv-text-muted)]">kg</span>
                     </>
                   ) : (
                     '—'
@@ -93,12 +93,12 @@ export function DailySummaries({ entries, limit = 7 }: Props) {
 
 function EmptyState({ title, body }: { title: string; body: string }) {
   return (
-    <div className="flex flex-col gap-3 py-10 text-[#68655f]">
+    <div className="flex flex-col gap-3 py-10 text-[var(--hv-text-muted)]">
       <div className="empty-illustration">
         <CalendarDays className="w-5 h-5" />
       </div>
       <div>
-        <strong className="text-[#28251d] block mb-0.5">{title}</strong>
+        <strong className="text-[var(--hv-text)] block mb-0.5">{title}</strong>
         <span className="text-sm">{body}</span>
       </div>
     </div>
