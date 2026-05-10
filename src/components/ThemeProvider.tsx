@@ -20,6 +20,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         ? window.matchMedia('(prefers-color-scheme: dark)').matches
         : false;
     const initial: Theme = saved === 'dark' || saved === 'light' ? saved : prefersDark ? 'dark' : 'light';
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(initial);
     document.documentElement.setAttribute('data-theme', initial);
     document.documentElement.classList.toggle('dark', initial === 'dark');

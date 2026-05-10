@@ -1,14 +1,6 @@
-import yaml from 'js-yaml';
-import { z } from 'zod';
-import {
-  FoodEntrySchema,
-  WeightEntrySchema,
-  DailySummarySchema,
-  type FoodEntry,
-  type WeightEntry,
-  type DailySummary,
-  type VaultEntry,
-} from './schemas';
+import * as yaml from 'js-yaml';
+import { FoodEntrySchema, WeightEntrySchema, DailySummarySchema } from './schemas';
+import type { FoodEntry, WeightEntry, DailySummary, VaultEntry } from './schemas';
 
 /* ------------------------------------------------------------------ */
 /* Front-matter extraction                                              */

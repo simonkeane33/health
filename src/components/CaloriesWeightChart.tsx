@@ -32,7 +32,7 @@ ChartJS.register(
 
 interface Props {
   summaries: DailySummary[];
-  range: '7' | '14' | '30';
+  range: '7' | '14' | '30' | '90' | '365';
   theme: 'light' | 'dark';
 }
 
@@ -59,13 +59,16 @@ export function CaloriesWeightChart({ summaries, range, theme }: Props) {
   const colors = CHART_COLORS[theme];
 
   const { labels, calories, weight, count } = useMemo(() => {
-    const days = parseInt(range);
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - days);
-
-    const filtered = summaries
-      .filter((s) => new Date(s.entry_date) >= cutoff)
-      .sort((a, b) => new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime());
+    const filtered = range === 'all'
+      ? [...summaries].sort((a, b) => new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime())
+      : (() => {
+          const days = parseInt(range, 10);
+          const cutoff = new Date();
+          cutoff.setDate(cutoff.getDate() - days);
+          return summaries
+            .filter((s) => new Date(s.entry_date) >= cutoff)
+            .sort((a, b) => new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime());
+        })();
 
     return {
       labels: filtered.map((s) =>
@@ -114,6 +117,7 @@ export function CaloriesWeightChart({ summaries, range, theme }: Props) {
     ],
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const options: any = {
     responsive: true,
     maintainAspectRatio: false,

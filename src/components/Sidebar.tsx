@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 
 interface SidebarProps {
   onPick: (files: FileList | null) => void;
-  onDemo: () => void;
+  onDemo?: () => void;
   onClear: () => void;
   loadStatus: string;
   entryCount?: number;
@@ -91,8 +91,10 @@ export function Sidebar({
           <input
             ref={(el) => {
               if (el) {
-                (el as any).webkitdirectory = true;
-                (el as any).directory = true;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (el as any).webkitdirectory = true;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (el as any).directory = true;
               }
             }}
             type="file"

@@ -2,7 +2,15 @@
 
 import { useState, useCallback } from 'react';
 import { parseVaultFile } from '@/lib/parser';
-import type { VaultData, FoodEntry, WeightEntry, DailySummary } from '@/lib/types';
+import { aggregateDailySummaries } from '@/lib/aggregator';
+import type { FoodEntry, WeightEntry, DailySummary, VaultEntry } from '@/lib/schemas';
+
+export interface VaultData {
+  foodEntries: FoodEntry[];
+  weightEntries: WeightEntry[];
+  dailySummaries: DailySummary[];
+  allEntries: VaultEntry[];
+}
 
 export function useVaultData() {
   const [data, setData] = useState<VaultData | null>(null);
@@ -42,13 +50,14 @@ export function useVaultData() {
 
       foodEntries.sort(sortByDate);
       weightEntries.sort(sortByDate);
-      dailySummaries.sort(sortByDate);
+
+      const mergedSummaries = aggregateDailySummaries(foodEntries, weightEntries, dailySummaries);
 
       setData({
         foodEntries,
         weightEntries,
-        dailySummaries,
-        allEntries: [...foodEntries, ...weightEntries, ...dailySummaries],
+        dailySummaries: mergedSummaries,
+        allEntries: [...foodEntries, ...weightEntries, ...mergedSummaries],
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load vault files');

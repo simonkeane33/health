@@ -19,7 +19,9 @@ export function VaultPicker({ onPick }: Props) {
       <input
         ref={(el) => {
           if (el) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (el as any).webkitdirectory = true;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (el as any).directory = true;
           }
         }}
