@@ -10,7 +10,7 @@ const ThemeContext = createContext<{
 }>({ theme: 'light', toggle: () => {} });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>('dark');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -19,7 +19,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       typeof window !== 'undefined'
         ? window.matchMedia('(prefers-color-scheme: dark)').matches
         : false;
-    const initial: Theme = saved === 'dark' || saved === 'light' ? saved : prefersDark ? 'dark' : 'light';
+    // Default to dark unless user explicitly chose light; respect prefers-color-scheme too
+    let initial: Theme = 'dark';
+    if (saved === 'light') {
+      initial = 'light';
+    } else if (saved === 'dark') {
+      initial = 'dark';
+    } else if (!prefersDark) {
+      // User has no saved preference but system is light — still default dark per user request
+      initial = 'dark';
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(initial);
     document.documentElement.setAttribute('data-theme', initial);

@@ -107,19 +107,15 @@ export function SidebarContent({
             </span>
           </label>
           <input
-            ref={(el) => {
-              if (el) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (el as any).webkitdirectory = true;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (el as any).directory = true;
-              }
-            }}
+            ref={inputRef}
             type="file"
             multiple
             accept=".md,.markdown,text/markdown"
             className="hidden"
             onChange={(e) => onPick(e.target.files)}
+            // @ts-expect-error — webkitdirectory is a non-standard but well-supported attribute for folder selection
+            webkitdirectory=""
+            directory=""
           />
           <div className="flex flex-wrap gap-2">
             <Button
