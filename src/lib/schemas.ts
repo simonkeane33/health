@@ -1,0 +1,123 @@
+import { z } from 'zod';
+
+/**
+ * Pre-process YAML fields that may be empty strings or null.
+ * js-yaml returns null for empty YAML fields; Obsidian vault notes also have
+ * literally empty values (e.g. `total_calories:`).
+ */
+const optionalNumber = () =>
+  z
+    .union([z.number(), z.string(), z.null()])
+    .transform((v) => {
+      if (v === '' || v === null || v === undefined) return undefined;
+      const n = Number(v);
+      return Number.isNaN(n) ? undefined : n;
+    })
+    .optional();
+
+const requiredString = () =>
+  z.union([z.string(), z.number(), z.null()]).transform((v) => (v == null ? '' : String(v)));
+
+const optionalString = () => z.string().optional();
+
+const optionalBoolean = () =>
+  z
+    .union([z.boolean(), z.string(), z.null()])
+    .transform((v) => {
+      if (typeof v === 'boolean') return v;
+      if (v === null || v === undefined) return undefined;
+      const s = String(v).toLowerCase().trim();
+      if (s === 'true' || s === '1' || s === 'yes') return true;
+      if (s === 'false' || s === '0' || s === 'no') return false;
+      return undefined;
+    })
+    .optional();
+
+const stringArray = () =>
+  z
+    .union([z.array(z.union([z.string(), z.number()])), z.string(), z.null()])
+    .transform((v) => {
+      if (Array.isArray(v)) return v.map(String);
+      if (typeof v === 'string') return v ? [v] : [];
+      return [];
+    });
+
+/* ------------------------------------------------------------------ */
+/* Entry schemas                                                       */
+/* ------------------------------------------------------------------ */
+
+export const FoodEntrySchema = z.object({
+  id: requiredString(),
+  entry_type: z.literal('food_entry'),
+  logged_at: requiredString(),
+  entry_date: requiredString(),
+  meal_type: requiredString(),
+  source: requiredString(),
+  source_channel: optionalString(),
+  image: optionalString(),
+  items: stringArray(),
+  estimated_calories: optionalNumber().default(0),
+  protein_g: optionalNumber(),
+  carbs_g: optionalNumber(),
+  fat_g: optionalNumber(),
+  fiber_g: optionalNumber(),
+  sugar_g: optionalNumber(),
+  fluids_ml: optionalNumber(),
+  alcohol_units: optionalNumber(),
+  confidence: optionalNumber().default(0),
+  needs_review: optionalBoolean().default(false),
+  review_status: requiredString().default('pending'),
+  user_confirmed: optionalBoolean().default(false),
+  correction_summary: optionalString(),
+  location: optionalString(),
+  mood: optionalString(),
+  notes: optionalString(),
+});
+
+export const WeightEntrySchema = z.object({
+  id: requiredString(),
+  entry_type: z.literal('weight_entry'),
+  logged_at: requiredString(),
+  entry_date: requiredString(),
+  weight_kg: optionalNumber().default(0),
+  fat_mass_kg: optionalNumber(),
+  bone_mass_kg: optionalNumber(),
+  muscle_mass_kg: optionalNumber(),
+  hydration_kg: optionalNumber(),
+  source: requiredString(),
+  source_channel: optionalString(),
+  fasted: optionalBoolean(),
+  time_period: optionalString(),
+  confidence: optionalNumber().default(0),
+  notes: optionalString(),
+});
+
+export const DailySummarySchema = z.object({
+  id: requiredString(),
+  entry_type: z.literal('daily_summary'),
+  entry_date: requiredString(),
+  weight_kg: optionalNumber(),
+  total_calories: optionalNumber(),
+  protein_g: optionalNumber(),
+  carbs_g: optionalNumber(),
+  fat_g: optionalNumber(),
+  fiber_g: optionalNumber(),
+  fluids_ml: optionalNumber(),
+  alcohol_units: optionalNumber(),
+  food_entries: optionalNumber(),
+  needs_review_count: optionalNumber(),
+  intake_complete: optionalBoolean().default(false),
+  summary_generated_at: optionalString(),
+  source: requiredString(),
+});
+
+export const VaultEntrySchema = z.union([
+  FoodEntrySchema,
+  WeightEntrySchema,
+  DailySummarySchema,
+]);
+
+export type FoodEntry = z.infer<typeof FoodEntrySchema>;
+export type WeightEntry = z.infer<typeof WeightEntrySchema>;
+export type DailySummary = z.infer<typeof DailySummarySchema>;
+export type VaultEntry = z.infer<typeof VaultEntrySchema>;

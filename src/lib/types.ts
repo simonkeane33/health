@@ -9,7 +9,7 @@ export interface WeightEntry {
   muscle_mass_kg?: number;
   hydration_kg?: number;
   source: string;
-  source_channel: string;
+  source_channel?: string;
   fasted?: boolean;
   time_period?: string;
   confidence: number;
