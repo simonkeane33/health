@@ -2,6 +2,7 @@
 
 import type { FoodEntry } from '@/lib/types';
 import { Salad } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface Props {
   entries: FoodEntry[];
@@ -24,43 +25,43 @@ export function FrequentFoods({ entries, limit = 8 }: Props) {
 
   if (sorted.length === 0) {
     return (
-      <div className="panel">
-        <div className="p-5">
-          <div className="micro-label mb-1">Patterns</div>
-          <h3 className="text-lg font-semibold tracking-tight mb-4">Frequent foods</h3>
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Patterns</div>
+          <CardTitle className="text-lg mb-4">Frequent foods</CardTitle>
           <div className="flex items-center gap-3 py-3">
-            <div className="empty-illustration">
+            <div className="w-14 h-14 rounded-[18px] grid place-items-center bg-accent text-primary shadow-[inset_0_0_0_1px_var(--border)]">
               <Salad className="w-5 h-5" />
             </div>
             <div>
-              <strong className="text-[var(--hv-text)] block mb-0.5">No recurring foods yet.</strong>
-              <span className="text-sm text-[var(--hv-text-muted)]">Keep tracking to see what shows up most.</span>
+              <strong className="text-foreground block mb-0.5">No recurring foods yet.</strong>
+              <span className="text-sm text-muted-foreground">Keep tracking to see what shows up most.</span>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="panel">
-      <div className="p-5 pb-0">
-        <div className="micro-label mb-1">Patterns</div>
-        <h3 className="text-lg font-semibold tracking-tight mb-4">Frequent foods</h3>
-      </div>
-      <div className="p-5 pt-0">
+    <Card>
+      <CardHeader className="pb-0">
+        <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Patterns</div>
+        <CardTitle className="text-lg">Frequent foods</CardTitle>
+      </CardHeader>
+      <CardContent>
         <ul className="flex flex-col gap-2">
           {sorted.map(([name, count]) => (
             <li
               key={name}
-              className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-[var(--hv-surface-offset)]"
+              className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-muted/50"
             >
-              <span className="text-sm text-[var(--hv-text)]">{name}</span>
-              <strong className="text-sm tabular-nums text-[var(--hv-text)]">{count}</strong>
+              <span className="text-sm text-foreground capitalize">{name}</span>
+              <strong className="text-sm tabular-nums text-foreground">{count}</strong>
             </li>
           ))}
         </ul>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
