@@ -2,19 +2,20 @@
 
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import type { VaultData } from '@/lib/types';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 function Delta({ current, previous, unit }: { current: number; previous?: number; unit?: string }) {
   if (previous === undefined || previous === 0) {
-    return <span className="delta text-[var(--hv-text-muted)]">—</span>;
+    return <span className="text-xs text-muted-foreground">—</span>;
   }
   const diff = current - previous;
   const pct = ((diff / previous) * 100).toFixed(1);
   const isDown = diff < 0;
   const Icon = isDown ? TrendingDown : diff > 0 ? TrendingUp : Minus;
-  const colorVar = isDown ? 'var(--hv-success)' : diff > 0 ? 'var(--hv-error)' : 'var(--hv-text-muted)';
+  const colorClass = isDown ? 'text-[var(--hv-success)]' : diff > 0 ? 'text-destructive' : 'text-muted-foreground';
 
   return (
-    <span className="delta flex items-center gap-1" style={{ color: colorVar }}>
+    <span className={`flex items-center gap-1 text-xs ${colorClass}`}>
       <Icon className="w-3 h-3" />
       {diff > 0 ? '+' : ''}{diff.toFixed(1)}{unit ? ` ${unit}` : ''} ({pct}%)
     </span>
@@ -24,13 +25,17 @@ function Delta({ current, previous, unit }: { current: number; previous?: number
 export function KpiGrid({ data }: { data?: VaultData | null }) {
   if (!data) {
     return (
-      <div className="kpi-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {['Latest weight', 'Calories today', 'Protein today', 'Fluids today'].map((label) => (
-          <div key={label} className="kpi panel">
-            <span className="micro-label">{label}</span>
-            <strong>—</strong>
-            <span className="delta text-[var(--hv-text-muted)]">No data</span>
-          </div>
+          <Card key={label}>
+            <CardHeader>
+              <CardTitle className="text-xs font-medium tracking-wider uppercase text-muted-foreground">{label}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="text-2xl font-bold">—</div>
+              <span className="text-xs text-muted-foreground">No data</span>
+            </CardContent>
+          </Card>
         ))}
       </div>
     );
@@ -46,30 +51,47 @@ export function KpiGrid({ data }: { data?: VaultData | null }) {
   const weightCurrent = latestWeight?.weight_kg ?? 0;
   const weightRemaining = Math.max(0, weightCurrent - weightTarget);
 
+  const items = [
+    {
+      label: 'Latest weight',
+      value: `${weightCurrent.toFixed(1)} kg`,
+      delta: <Delta current={weightCurrent} previous={prevWeight?.weight_kg} unit="kg" />,
+      sub: `${weightRemaining.toFixed(1)} kg to 90 kg target · ${days} days tracked`,
+    },
+    {
+      label: 'Calories today',
+      value: latestSummary?.total_calories?.toString() ?? '—',
+      delta: <Delta current={latestSummary?.total_calories ?? 0} previous={prevSummary?.total_calories ?? 0} />,
+      sub: latestSummary ? `${latestSummary.food_entries ?? 0} entries` : 'No summary yet',
+    },
+    {
+      label: 'Protein today',
+      value: latestSummary?.protein_g ? `${latestSummary.protein_g}g` : '—',
+      delta: <Delta current={latestSummary?.protein_g ?? 0} previous={prevSummary?.protein_g ?? 0} unit="g" />,
+      sub: '',
+    },
+    {
+      label: 'Fluids today',
+      value: latestSummary?.fluids_ml ? `${latestSummary.fluids_ml}ml` : '—',
+      delta: <Delta current={latestSummary?.fluids_ml ?? 0} previous={prevSummary?.fluids_ml ?? 0} unit="ml" />,
+      sub: '',
+    },
+  ];
+
   return (
-    <div className="kpi-grid">
-      <div className="kpi panel">
-        <span className="micro-label">Latest weight</span>
-        <strong>{weightCurrent.toFixed(1)} kg</strong>
-        <Delta current={weightCurrent} previous={prevWeight?.weight_kg} unit="kg" />
-        <span className="subtle">{weightRemaining.toFixed(1)} kg to 90 kg target · {days} days tracked</span>
-      </div>
-      <div className="kpi panel">
-        <span className="micro-label">Calories today</span>
-        <strong>{latestSummary?.total_calories?.toString() ?? '—'}</strong>
-        <Delta current={latestSummary?.total_calories ?? 0} previous={prevSummary?.total_calories ?? 0} />
-        <span className="subtle">{latestSummary ? `${latestSummary.food_entries ?? 0} entries` : 'No summary yet'}</span>
-      </div>
-      <div className="kpi panel">
-        <span className="micro-label">Protein today</span>
-        <strong>{latestSummary?.protein_g ? `${latestSummary.protein_g}g` : '—'}</strong>
-        <Delta current={latestSummary?.protein_g ?? 0} previous={prevSummary?.protein_g ?? 0} unit="g" />
-      </div>
-      <div className="kpi panel">
-        <span className="micro-label">Fluids today</span>
-        <strong>{latestSummary?.fluids_ml ? `${latestSummary.fluids_ml}ml` : '—'}</strong>
-        <Delta current={latestSummary?.fluids_ml ?? 0} previous={prevSummary?.fluids_ml ?? 0} unit="ml" />
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {items.map(({ label, value, delta, sub }) => (
+        <Card key={label}>
+          <CardHeader>
+            <CardTitle className="text-xs font-medium tracking-wider uppercase text-muted-foreground">{label}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-[clamp(1.75rem,1.1rem_+_1.8vw,2.7rem)] font-bold tabular-nums tracking-tight">{value}</div>
+            {delta}
+            {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

@@ -4,8 +4,16 @@ import { useRef } from 'react';
 import { FolderOpen } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-interface SidebarProps {
+export interface SidebarProps {
   onPick: (files: FileList | null) => void;
   onDemo?: () => void;
   onClear: () => void;
@@ -44,13 +52,13 @@ function Dot({ color }: { color: string }) {
   };
   return (
     <span
-      className={cn('dot', colorMap[color] ?? 'bg-[var(--hv-text-faint)]')}
+      className={cn('w-2.5 h-2.5 rounded-full flex-shrink-0', colorMap[color] ?? 'bg-muted')}
       aria-hidden="true"
     />
   );
 }
 
-export function Sidebar({
+export function SidebarContent({
   onPick,
   onDemo,
   onClear,
@@ -64,27 +72,37 @@ export function Sidebar({
   const hasData = typeof entryCount === 'number' && entryCount > 0;
 
   return (
-    <aside className="sidebar">
-      <div className="brand">
-        <div className="brand-mark" aria-hidden="true">
+    <>
+      <div className="flex items-center gap-3">
+        <div
+          className="grid place-items-center w-[42px] h-[42px] rounded-[14px] text-primary bg-accent shadow-[inset_0_0_0_1px_var(--border)]"
+          aria-hidden="true"
+        >
           <Logo />
         </div>
-        <div className="brand-copy">
-          <h1>Health Vault</h1>
-          <p>Browser dashboard for your Obsidian intake notes.</p>
+        <div>
+          <h1 className="m-0 text-[clamp(1.125rem,1rem_+.75vw,1.5rem)] leading-[1.05] font-heading font-medium">
+            Health Vault
+          </h1>
+          <p className="mt-1 text-muted-foreground text-[clamp(0.875rem,0.8rem_+.35vw,1rem)]">
+            Browser dashboard for your Obsidian intake notes.
+          </p>
         </div>
       </div>
 
-      <section className="panel sidebar-section">
+      <div className="flex flex-col gap-4 rounded-none border border-border bg-card/80 p-4 ring-1 ring-foreground/5">
         <div>
-          <div className="micro-label">Import</div>
-          <h2>Load your vault notes</h2>
+          <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
+            Import
+          </div>
+          <h2 className="m-0 text-[clamp(1.125rem,1rem_+.75vw,1.5rem)] leading-[1.15] font-heading">
+            Load your vault notes
+          </h2>
         </div>
-        <div className="picker">
-          <label>
-            <strong>Pick the Health folder</strong>
-            <br />
-            <span className="subtle">
+        <div className="flex flex-col gap-3 rounded-none border border-dashed border-border bg-muted/50 p-4">
+          <label className="text-sm">
+            <strong className="block mb-1">Pick the Health folder</strong>
+            <span className="text-muted-foreground">
               Select your Obsidian Health folder or any folder containing the Markdown notes.
             </span>
           </label>
@@ -103,86 +121,100 @@ export function Sidebar({
             className="hidden"
             onChange={(e) => onPick(e.target.files)}
           />
-          <div className="actions">
-            <button className="btn btn-primary" type="button" onClick={() => inputRef.current?.click()}>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="rounded-full"
+            >
               <FolderOpen width={16} height={16} />
               Select folder
-            </button>
-            <button className="btn btn-primary" type="button" onClick={onDemo}>
+            </Button>
+            <Button type="button" onClick={onDemo} variant="secondary" className="rounded-full">
               Load demo data
-            </button>
-            <button className="btn btn-secondary" type="button" onClick={onClear}>
+            </Button>
+            <Button type="button" onClick={onClear} variant="outline" className="rounded-full">
               Clear
-            </button>
+            </Button>
           </div>
         </div>
         <div>
-          <div className="micro-label">Status</div>
-          <p className="subtle">{loadStatus}</p>
+          <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
+            Status
+          </div>
+          <p className="text-muted-foreground">{loadStatus}</p>
         </div>
-      </section>
+      </div>
 
-      <section className="panel sidebar-section">
-        <div className="micro-label">Legend</div>
-        <ul className="legend-list">
-          <li>
-            <span className="flex items-center gap-2">
-              <Dot color="teal" /> Intake
-            </span>
-            <span className="subtle">Calories</span>
-          </li>
-          <li>
-            <span className="flex items-center gap-2">
-              <Dot color="green" /> Recovery
-            </span>
-            <span className="subtle">Protein</span>
-          </li>
-          <li>
-            <span className="flex items-center gap-2">
-              <Dot color="gold" /> Hydration
-            </span>
-            <span className="subtle">Fluids</span>
-          </li>
-          <li>
-            <span className="flex items-center gap-2">
-              <Dot color="pink" /> Review
-            </span>
-            <span className="subtle">Uncertain entries</span>
-          </li>
+      <div className="flex flex-col gap-4 rounded-none border border-border bg-card/80 p-4 ring-1 ring-foreground/5">
+        <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
+          Legend
+        </div>
+        <ul className="grid gap-2 m-0 p-0 list-none">
+          {[
+            { color: 'teal' as const, label: 'Intake', sub: 'Calories' },
+            { color: 'green' as const, label: 'Recovery', sub: 'Protein' },
+            { color: 'gold' as const, label: 'Hydration', sub: 'Fluids' },
+            { color: 'pink' as const, label: 'Review', sub: 'Uncertain entries' },
+          ].map(({ color, label, sub }) => (
+            <li
+              key={label}
+              className="flex items-center justify-between gap-3 rounded-none px-4 py-3 bg-muted/60"
+            >
+              <span className="flex items-center gap-2">
+                <Dot color={color} /> {label}
+              </span>
+              <span className="text-muted-foreground">{sub}</span>
+            </li>
+          ))}
         </ul>
-      </section>
+      </div>
 
-      <section className="panel sidebar-section">
-        <div className="micro-label">Controls</div>
-        <div className="actions">
-          <ThemeToggle className="btn-ghost theme-toggle" size="md" />
-          <select
-            value={range}
-            onChange={(e) => onRangeChange(e.target.value)}
-            className="btn btn-secondary"
-            aria-label="Select chart range"
-          >
-            <option value="7">Last 7 days</option>
-            <option value="14">Last 14 days</option>
-            <option value="30">Last 30 days</option>
-            <option value="90">Last 90 days</option>
-            <option value="365">Last year</option>
-            <option value="all">All time</option>
-          </select>
+      <div className="flex flex-col gap-4 rounded-none border border-border bg-card/80 p-4 ring-1 ring-foreground/5">
+        <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
+          Controls
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <ThemeToggle className="size-11 rounded-full border border-border bg-transparent hover:bg-muted" size="md" />
+          <Select value={range} onValueChange={onRangeChange}>
+            <SelectTrigger className="rounded-none h-8 bg-secondary">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7">Last 7 days</SelectItem>
+              <SelectItem value="14">Last 14 days</SelectItem>
+              <SelectItem value="30">Last 30 days</SelectItem>
+              <SelectItem value="90">Last 90 days</SelectItem>
+              <SelectItem value="365">Last year</SelectItem>
+              <SelectItem value="all">All time</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         {hasData && (
           <div className="flex items-center gap-3 pt-2">
             <div className="text-sm">
-              <span className="micro-label">Entries</span>
+              <span className="text-xs font-medium tracking-wider uppercase text-muted-foreground block">
+                Entries
+              </span>
               <strong className="block text-xl tabular-nums">{entryCount}</strong>
             </div>
             <div className="text-sm">
-              <span className="micro-label">Days</span>
+              <span className="text-xs font-medium tracking-wider uppercase text-muted-foreground block">
+                Days
+              </span>
               <strong className="block text-xl tabular-nums">{dayCount}</strong>
             </div>
           </div>
         )}
-      </section>
+      </div>
+    </>
+  );
+}
+
+export function Sidebar(props: SidebarProps) {
+  return (
+    <aside className="bg-card/80 border-r border-border h-[100dvh] sticky top-0 p-6 flex flex-col gap-6 overflow-y-auto">
+      <SidebarContent {...props} />
     </aside>
   );
 }
