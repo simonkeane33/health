@@ -12,7 +12,7 @@ function Delta({ current, previous, unit }: { current: number; previous?: number
   const pct = ((diff / previous) * 100).toFixed(1);
   const isDown = diff < 0;
   const Icon = isDown ? TrendingDown : diff > 0 ? TrendingUp : Minus;
-  const colorClass = isDown ? 'text-[var(--hv-success)]' : diff > 0 ? 'text-destructive' : 'text-muted-foreground';
+  const colorClass = isDown ? 'text-emerald-600' : diff > 0 ? 'text-destructive' : 'text-muted-foreground';
 
   return (
     <span className={`flex items-center gap-1 text-xs ${colorClass}`}>

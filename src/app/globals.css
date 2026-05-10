@@ -1,11 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-heading: var(--font-satoshi);
-  --font-body: var(--font-satoshi);
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-sans);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -43,116 +44,78 @@
   --radius-xl: 1rem;
   --radius-2xl: 1.25rem;
   --radius-3xl: 1.5rem;
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 :root {
   --font-satoshi: 'Satoshi', Inter, system-ui, sans-serif;
 
-  /* Health Vault tokens — light */
-  --hv-bg: #f7f6f2;
-  --hv-surface: #f9f8f5;
-  --hv-surface-2: #fbfbf9;
-  --hv-surface-offset: #f3f0ec;
-  --hv-surface-accent: color-mix(in oklab, #01696f 6%, #f9f8f5);
-  --hv-border: rgba(40, 37, 29, 0.12);
-  --hv-divider: #dcd9d5;
-  --hv-text: #28251d;
-  --hv-text-muted: #68655f;
-  --hv-text-faint: #9a9891;
-  --hv-text-inverse: #f9f8f4;
-  --hv-primary: #01696f;
-  --hv-primary-hover: #0c4e54;
-  --hv-success: #437a22;
-  --hv-warning: #964219;
-  --hv-error: #a12c7b;
-  --hv-teal: #01696f;
-  --hv-green: #437a22;
-  --hv-gold: #964219;
-  --hv-pink: #a12c7b;
-
-  /* shadcn mappings */
-  --background: #f7f6f2;
-  --foreground: #28251d;
-  --card: #f9f8f5;
-  --card-foreground: #28251d;
-  --popover: #f9f8f5;
-  --popover-foreground: #28251d;
-  --primary: #01696f;
-  --primary-foreground: #f9f8f4;
-  --secondary: #f3f0ec;
-  --secondary-foreground: #28251d;
-  --muted: #f3f0ec;
-  --muted-foreground: #68655f;
-  --accent: #f3f0ec;
-  --accent-foreground: #28251d;
-  --destructive: #a12c7b;
-  --border: rgba(40, 37, 29, 0.12);
-  --input: rgba(40, 37, 29, 0.12);
-  --ring: #01696f;
-  --radius: 0.75rem;
-  --chart-1: #01696f;
-  --chart-2: #437a22;
-  --chart-3: #964219;
-  --chart-4: #a12c7b;
-  --chart-5: #68655f;
-  --sidebar: #fdfcfa;
-  --sidebar-foreground: #28251d;
-  --sidebar-primary: #01696f;
-  --sidebar-primary-foreground: #f9f8f4;
-  --sidebar-accent: #f3f0ec;
-  --sidebar-accent-foreground: #28251d;
-  --sidebar-border: rgba(40, 37, 29, 0.12);
-  --sidebar-ring: #01696f;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --radius: 0.625rem;
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
-  --hv-bg: #171614;
-  --hv-surface: #1c1b19;
-  --hv-surface-2: #201f1d;
-  --hv-surface-offset: #22211f;
-  --hv-surface-accent: color-mix(in oklab, #4f98a3 8%, #1c1b19);
-  --hv-border: rgba(205, 204, 202, 0.12);
-  --hv-divider: #2b2a28;
-  --hv-text: #cdccca;
-  --hv-text-muted: #a29f99;
-  --hv-text-faint: #6d6a64;
-  --hv-text-inverse: #171614;
-  --hv-primary: #4f98a3;
-  --hv-primary-hover: #74a9b2;
-  --hv-success: #6daa45;
-  --hv-warning: #e8af34;
-  --hv-error: #d163a7;
-  --hv-teal: #4f98a3;
-  --hv-green: #6daa45;
-  --hv-gold: #e8af34;
-  --hv-pink: #d163a7;
-
-  --background: #171614;
-  --foreground: #cdccca;
-  --card: #1c1b19;
-  --card-foreground: #cdccca;
-  --popover: #1c1b19;
-  --popover-foreground: #cdccca;
-  --primary: #4f98a3;
-  --primary-foreground: #171614;
-  --secondary: #22211f;
-  --secondary-foreground: #cdccca;
-  --muted: #22211f;
-  --muted-foreground: #a29f99;
-  --accent: #22211f;
-  --accent-foreground: #cdccca;
-  --destructive: #d163a7;
-  --border: rgba(205, 204, 202, 0.12);
-  --input: rgba(205, 204, 202, 0.12);
-  --ring: #4f98a3;
-  --sidebar: #1c1b19;
-  --sidebar-foreground: #cdccca;
-  --sidebar-primary: #4f98a3;
-  --sidebar-primary-foreground: #171614;
-  --sidebar-accent: #22211f;
-  --sidebar-accent-foreground: #cdccca;
-  --sidebar-border: rgba(205, 204, 202, 0.12);
-  --sidebar-ring: #4f98a3;
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 }
 
 html {
@@ -163,14 +126,7 @@ html {
 
 body {
   font-family: var(--font-satoshi);
-  background:
-    radial-gradient(circle at top right, color-mix(in oklab, var(--hv-primary) 6%, transparent), transparent 28%),
-    var(--hv-bg);
-  color: var(--hv-text);
-  min-height: 100dvh;
 }
-
-/* App shell layout ----------------------------------------------------------- */
 
 @layer base {
   * {
@@ -178,5 +134,8 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }

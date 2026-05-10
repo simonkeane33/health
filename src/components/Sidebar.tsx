@@ -45,10 +45,10 @@ function Logo() {
 
 function Dot({ color }: { color: string }) {
   const colorMap: Record<string, string> = {
-    teal: 'bg-[var(--hv-teal)]',
-    green: 'bg-[var(--hv-green)]',
-    gold: 'bg-[var(--hv-gold)]',
-    pink: 'bg-[var(--hv-pink)]',
+    teal: 'bg-primary',
+    green: 'bg-emerald-500',
+    gold: 'bg-amber-500',
+    pink: 'bg-rose-400',
   };
   return (
     <span
