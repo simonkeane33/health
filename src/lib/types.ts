@@ -4,10 +4,11 @@ export interface WeightEntry {
   logged_at: string;
   entry_date: string;
   weight_kg: number;
-  fat_mass_kg?: number;
-  bone_mass_kg?: number;
-  muscle_mass_kg?: number;
-  hydration_kg?: number;
+  fat_mass_pct?: number;
+  muscle_mass_pct?: number;
+  bone_mass_pct?: number;
+  body_water_pct?: number;
+  height_cm?: number;
   source: string;
   source_channel?: string;
   fasted?: boolean;
@@ -49,6 +50,11 @@ export interface DailySummary {
   entry_type: 'daily_summary';
   entry_date: string;
   weight_kg?: number;
+  bmi?: number;
+  fat_mass_pct?: number;
+  muscle_mass_pct?: number;
+  bone_mass_pct?: number;
+  body_water_pct?: number;
   total_calories?: number;
   protein_g?: number;
   carbs_g?: number;

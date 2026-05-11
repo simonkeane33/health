@@ -38,6 +38,11 @@ export const weightEntrySchema = z.object({
     }),
   time_period: z.enum(['morning', 'evening']),
   fasted: z.boolean(),
+  fat_mass_pct: z.string().optional(),
+  muscle_mass_pct: z.string().optional(),
+  bone_mass_pct: z.string().optional(),
+  body_water_pct: z.string().optional(),
+  height_cm: z.string().optional(),
   notes: z.string().optional(),
 });
 

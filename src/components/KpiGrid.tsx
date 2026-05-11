@@ -50,6 +50,7 @@ export function KpiGrid({ data }: { data?: VaultData | null }) {
   const weightTarget = 90;
   const weightCurrent = latestWeight?.weight_kg ?? 0;
   const weightRemaining = Math.max(0, weightCurrent - weightTarget);
+  const bmiCurrent = latestSummary?.bmi;
 
   const items = [
     {
@@ -59,16 +60,16 @@ export function KpiGrid({ data }: { data?: VaultData | null }) {
       sub: `${weightRemaining.toFixed(1)} kg to 90 kg target · ${days} days tracked`,
     },
     {
+      label: 'BMI',
+      value: bmiCurrent ? bmiCurrent.toFixed(1) : '—',
+      delta: <Delta current={bmiCurrent ?? 0} previous={prevSummary?.bmi ?? undefined} />,
+      sub: bmiCurrent ? (bmiCurrent < 18.5 ? 'Underweight' : bmiCurrent < 25 ? 'Healthy' : bmiCurrent < 30 ? 'Overweight' : 'Obese') : '',
+    },
+    {
       label: 'Calories today',
       value: latestSummary?.total_calories?.toString() ?? '—',
       delta: <Delta current={latestSummary?.total_calories ?? 0} previous={prevSummary?.total_calories ?? 0} />,
       sub: latestSummary ? `${latestSummary.food_entries ?? 0} entries` : 'No summary yet',
-    },
-    {
-      label: 'Protein today',
-      value: latestSummary?.protein_g ? `${latestSummary.protein_g}g` : '—',
-      delta: <Delta current={latestSummary?.protein_g ?? 0} previous={prevSummary?.protein_g ?? 0} unit="g" />,
-      sub: '',
     },
     {
       label: 'Fluids today',

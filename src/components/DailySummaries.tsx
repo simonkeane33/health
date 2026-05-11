@@ -32,6 +32,10 @@ export function DailySummaries({ entries, limit = 7 }: Props) {
     .sort((a, b) => new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime())
     .slice(0, limit);
 
+  const hasBodyComp = days.some(
+    (d) => d.fat_mass_pct != null || d.muscle_mass_pct != null || d.bmi != null
+  );
+
   return (
     <Card>
       <CardHeader className="pb-0">
@@ -44,9 +48,14 @@ export function DailySummaries({ entries, limit = 7 }: Props) {
             <tr>
               <th className="text-left text-[11px] uppercase tracking-wider text-muted-foreground font-medium py-2.5 px-2 border-b border-border">Day</th>
               <th className="text-left text-[11px] uppercase tracking-wider text-muted-foreground font-medium py-2.5 px-2 border-b border-border">Calories</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-muted-foreground font-medium py-2.5 px-2 border-b border-border">Protein</th>
-              <th className="text-left text-[11px] uppercase tracking-wider text-muted-foreground font-medium py-2.5 px-2 border-b border-border">Fluids</th>
               <th className="text-left text-[11px] uppercase tracking-wider text-muted-foreground font-medium py-2.5 px-2 border-b border-border">Weight</th>
+              {hasBodyComp && (
+                <>
+                  <th className="text-left text-[11px] uppercase tracking-wider text-muted-foreground font-medium py-2.5 px-2 border-b border-border">BMI</th>
+                  <th className="text-left text-[11px] uppercase tracking-wider text-muted-foreground font-medium py-2.5 px-2 border-b border-border">Fat%</th>
+                  <th className="text-left text-[11px] uppercase tracking-wider text-muted-foreground font-medium py-2.5 px-2 border-b border-border">Water%</th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -66,14 +75,6 @@ export function DailySummaries({ entries, limit = 7 }: Props) {
                   <span className="text-muted-foreground">kcal</span>
                 </td>
                 <td className="py-3 px-2 border-b border-border">
-                  {formatNumber(day.protein_g ?? 0, 0)}{' '}
-                  <span className="text-muted-foreground">g</span>
-                </td>
-                <td className="py-3 px-2 border-b border-border">
-                  {formatNumber(day.fluids_ml ?? 0, 0)}{' '}
-                  <span className="text-muted-foreground">ml</span>
-                </td>
-                <td className="py-3 px-2 border-b border-border">
                   {day.weight_kg != null ? (
                     <>
                       <strong className="tabular-nums">{formatNumber(day.weight_kg, 1)}</strong>{' '}
@@ -83,6 +84,19 @@ export function DailySummaries({ entries, limit = 7 }: Props) {
                     '—'
                   )}
                 </td>
+                {hasBodyComp && (
+                  <>
+                    <td className="py-3 px-2 border-b border-border">
+                      {day.bmi != null ? <span className="tabular-nums">{formatNumber(day.bmi, 1)}</span> : '—'}
+                    </td>
+                    <td className="py-3 px-2 border-b border-border">
+                      {day.fat_mass_pct != null ? <span className="tabular-nums">{formatNumber(day.fat_mass_pct, 1)}%</span> : '—'}
+                    </td>
+                    <td className="py-3 px-2 border-b border-border">
+                      {day.body_water_pct != null ? <span className="tabular-nums">{formatNumber(day.body_water_pct, 1)}%</span> : '—'}
+                    </td>
+                  </>
+                )}
               </tr>
             ))}
           </tbody>

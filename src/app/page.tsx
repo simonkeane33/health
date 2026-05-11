@@ -26,6 +26,7 @@ import { RecentEntries } from '@/components/RecentEntries';
 import { FrequentFoods } from '@/components/FrequentFoods';
 import { DailySummaries } from '@/components/DailySummaries';
 import { ExerciseCard } from '@/components/ExerciseCard';
+import { BodyCompositionCard } from '@/components/BodyCompositionCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 type RangeValue = '7' | '14' | '30' | '90' | '365' | 'all';
 
@@ -174,6 +175,9 @@ export default function Home() {
 
             {/* KPIs */}
             <KpiGrid data={data} />
+
+            {/* Body Composition */}
+            <BodyCompositionCard summaries={data.dailySummaries} />
 
             {/* Chart — full width */}
             <Card>

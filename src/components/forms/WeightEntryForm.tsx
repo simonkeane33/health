@@ -35,6 +35,12 @@ function makeId(prefix: string, date: string) {
   return `${prefix}-${date}-${Date.now().toString(36)}`;
 }
 
+function optionalNum(val: string | undefined): number | undefined {
+  if (!val || val.trim() === '') return undefined;
+  const n = parseFloat(val);
+  return Number.isNaN(n) ? undefined : n;
+}
+
 export default function WeightEntryForm() {
   const { date, time } = nowLocalInputs();
   const [submitted, setSubmitted] = useState(false);
@@ -47,6 +53,11 @@ export default function WeightEntryForm() {
       weight_kg: '',
       time_period: 'morning',
       fasted: false,
+      fat_mass_pct: '',
+      muscle_mass_pct: '',
+      bone_mass_pct: '',
+      body_water_pct: '',
+      height_cm: '',
       notes: '',
     },
   });
@@ -55,6 +66,11 @@ export default function WeightEntryForm() {
     (data: WeightEntryFormData) => {
       const loggedAt = new Date(`${data.entry_date}T${data.entry_time}`).toISOString();
       const weightNum = parseFloat(data.weight_kg);
+      const fatMass = optionalNum(data.fat_mass_pct);
+      const muscleMass = optionalNum(data.muscle_mass_pct);
+      const boneMass = optionalNum(data.bone_mass_pct);
+      const bodyWater = optionalNum(data.body_water_pct);
+      const heightCm = optionalNum(data.height_cm);
 
       const frontmatter: Record<string, unknown> = {
         id: makeId('weight', data.entry_date),
@@ -70,9 +86,12 @@ export default function WeightEntryForm() {
         tags: ['health', 'weight'],
       };
 
-      if (data.notes) {
-        frontmatter.notes = data.notes;
-      }
+      if (fatMass !== undefined) frontmatter.fat_mass_pct = fatMass;
+      if (muscleMass !== undefined) frontmatter.muscle_mass_pct = muscleMass;
+      if (boneMass !== undefined) frontmatter.bone_mass_pct = boneMass;
+      if (bodyWater !== undefined) frontmatter.body_water_pct = bodyWater;
+      if (heightCm !== undefined) frontmatter.height_cm = heightCm;
+      if (data.notes) frontmatter.notes = data.notes;
 
       const md = `---\n${yaml.dump(frontmatter, { noRefs: true, lineWidth: -1 }).trim()}\n---\n\n# Weight entry — ${data.entry_date}\n\nWeight: **${data.weight_kg} kg**\n`;
 
@@ -93,6 +112,11 @@ export default function WeightEntryForm() {
         time_period: 'morning',
         fasted: false,
         weight_kg: '',
+        fat_mass_pct: '',
+        muscle_mass_pct: '',
+        bone_mass_pct: '',
+        body_water_pct: '',
+        height_cm: '',
         notes: '',
       });
     },
@@ -196,6 +220,80 @@ export default function WeightEntryForm() {
           />
         </div>
 
+        {/* Body Composition — optional */}
+        <div className="space-y-1">
+          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Body Composition</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="fat_mass_pct"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs text-muted-foreground">Fat Mass %</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.1" placeholder="e.g. 25.0" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="muscle_mass_pct"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs text-muted-foreground">Muscle Mass %</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.1" placeholder="e.g. 71.3" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="bone_mass_pct"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs text-muted-foreground">Bone Mass %</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.1" placeholder="e.g. 3.7" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="body_water_pct"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs text-muted-foreground">Body Water %</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.1" placeholder="e.g. 52.0" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        {/* Height (for BMI) */}
+        <FormField
+          control={form.control}
+          name="height_cm"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs text-muted-foreground">Height (cm) — optional, for BMI</FormLabel>
+              <FormControl>
+                <Input type="number" step="0.1" placeholder="e.g. 178" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         {/* Notes */}
         <FormField
           control={form.control}
@@ -204,10 +302,7 @@ export default function WeightEntryForm() {
             <FormItem>
               <FormLabel className="text-xs text-muted-foreground">Notes</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="optional"
-                  {...field}
-                />
+                <Input placeholder="optional" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
