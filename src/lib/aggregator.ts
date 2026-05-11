@@ -12,7 +12,7 @@ export interface AggregatedDay {
   food_entries: number;
   needs_review_count: number;
   weight_kg?: number;
-  fat_mass_pct?: number;
+  body_fat_pct?: number;
   muscle_mass_pct?: number;
   bone_mass_pct?: number;
   body_water_pct?: number;
@@ -92,9 +92,11 @@ export function aggregateDailySummaries(
     );
 
     const latestWeight = weights[0];
-    const bmi = latestWeight?.weight_kg && latestWeight?.height_cm
-      ? latestWeight.weight_kg / Math.pow(latestWeight.height_cm / 100, 2)
-      : undefined;
+    const bmi = latestWeight?.bmi ?? (
+      latestWeight?.weight_kg && latestWeight?.height_cm
+        ? latestWeight.weight_kg / Math.pow(latestWeight.height_cm / 100, 2)
+        : undefined
+    );
 
     const computed: AggregatedDay = {
       entry_date: date,
@@ -108,7 +110,7 @@ export function aggregateDailySummaries(
       food_entries: foods.length,
       needs_review_count: foods.filter((f) => f.needs_review === true).length,
       weight_kg: latestWeight?.weight_kg,
-      fat_mass_pct: latestWeight?.fat_mass_pct,
+      body_fat_pct: latestWeight?.body_fat_pct,
       muscle_mass_pct: latestWeight?.muscle_mass_pct,
       bone_mass_pct: latestWeight?.bone_mass_pct,
       body_water_pct: latestWeight?.body_water_pct,
@@ -131,7 +133,7 @@ export function aggregateDailySummaries(
         food_entries: existing.food_entries || computed.food_entries,
         needs_review_count: existing.needs_review_count || computed.needs_review_count,
         weight_kg: existing.weight_kg ?? computed.weight_kg,
-        fat_mass_pct: existing.fat_mass_pct ?? computed.fat_mass_pct,
+        body_fat_pct: existing.body_fat_pct ?? computed.body_fat_pct,
         muscle_mass_pct: existing.muscle_mass_pct ?? computed.muscle_mass_pct,
         bone_mass_pct: existing.bone_mass_pct ?? computed.bone_mass_pct,
         body_water_pct: existing.body_water_pct ?? computed.body_water_pct,
@@ -164,7 +166,7 @@ function normalizeToDailySummary(day: AggregatedDay): DailySummary {
     needs_review_count: day.needs_review_count,
     intake_complete: day.intake_complete,
     weight_kg: day.weight_kg,
-    fat_mass_pct: day.fat_mass_pct,
+    body_fat_pct: day.body_fat_pct,
     muscle_mass_pct: day.muscle_mass_pct,
     bone_mass_pct: day.bone_mass_pct,
     body_water_pct: day.body_water_pct,

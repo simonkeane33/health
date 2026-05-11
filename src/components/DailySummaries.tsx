@@ -33,7 +33,7 @@ export function DailySummaries({ entries, limit = 7 }: Props) {
     .slice(0, limit);
 
   const hasBodyComp = days.some(
-    (d) => d.fat_mass_pct != null || d.muscle_mass_pct != null || d.bmi != null
+    (d) => d.body_fat_pct != null || d.muscle_mass_pct != null || d.bmi != null
   );
 
   return (
@@ -90,7 +90,7 @@ export function DailySummaries({ entries, limit = 7 }: Props) {
                       {day.bmi != null ? <span className="tabular-nums">{formatNumber(day.bmi, 1)}</span> : '—'}
                     </td>
                     <td className="py-3 px-2 border-b border-border">
-                      {day.fat_mass_pct != null ? <span className="tabular-nums">{formatNumber(day.fat_mass_pct, 1)}%</span> : '—'}
+                      {day.body_fat_pct != null ? <span className="tabular-nums">{formatNumber(day.body_fat_pct, 1)}%</span> : '—'}
                     </td>
                     <td className="py-3 px-2 border-b border-border">
                       {day.body_water_pct != null ? <span className="tabular-nums">{formatNumber(day.body_water_pct, 1)}%</span> : '—'}

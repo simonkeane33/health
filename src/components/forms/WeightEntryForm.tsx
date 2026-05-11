@@ -53,11 +53,12 @@ export default function WeightEntryForm() {
       weight_kg: '',
       time_period: 'morning',
       fasted: false,
-      fat_mass_pct: '',
+      body_fat_pct: '',
       muscle_mass_pct: '',
       bone_mass_pct: '',
       body_water_pct: '',
       height_cm: '',
+      bmi: '',
       notes: '',
     },
   });
@@ -66,11 +67,12 @@ export default function WeightEntryForm() {
     (data: WeightEntryFormData) => {
       const loggedAt = new Date(`${data.entry_date}T${data.entry_time}`).toISOString();
       const weightNum = parseFloat(data.weight_kg);
-      const fatMass = optionalNum(data.fat_mass_pct);
+      const bodyFat = optionalNum(data.body_fat_pct);
       const muscleMass = optionalNum(data.muscle_mass_pct);
       const boneMass = optionalNum(data.bone_mass_pct);
       const bodyWater = optionalNum(data.body_water_pct);
       const heightCm = optionalNum(data.height_cm);
+      const bmi = optionalNum(data.bmi);
 
       const frontmatter: Record<string, unknown> = {
         id: makeId('weight', data.entry_date),
@@ -86,11 +88,12 @@ export default function WeightEntryForm() {
         tags: ['health', 'weight'],
       };
 
-      if (fatMass !== undefined) frontmatter.fat_mass_pct = fatMass;
+      if (bodyFat !== undefined) frontmatter.body_fat_pct = bodyFat;
       if (muscleMass !== undefined) frontmatter.muscle_mass_pct = muscleMass;
       if (boneMass !== undefined) frontmatter.bone_mass_pct = boneMass;
       if (bodyWater !== undefined) frontmatter.body_water_pct = bodyWater;
       if (heightCm !== undefined) frontmatter.height_cm = heightCm;
+      if (bmi !== undefined) frontmatter.bmi = bmi;
       if (data.notes) frontmatter.notes = data.notes;
 
       const md = `---\n${yaml.dump(frontmatter, { noRefs: true, lineWidth: -1 }).trim()}\n---\n\n# Weight entry — ${data.entry_date}\n\nWeight: **${data.weight_kg} kg**\n`;
@@ -112,11 +115,12 @@ export default function WeightEntryForm() {
         time_period: 'morning',
         fasted: false,
         weight_kg: '',
-        fat_mass_pct: '',
+        body_fat_pct: '',
         muscle_mass_pct: '',
         bone_mass_pct: '',
         body_water_pct: '',
         height_cm: '',
+        bmi: '',
         notes: '',
       });
     },
@@ -226,7 +230,7 @@ export default function WeightEntryForm() {
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="fat_mass_pct"
+              name="body_fat_pct"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs text-muted-foreground">Fat Mass %</FormLabel>

@@ -10,7 +10,7 @@ protein_g: 120
 fluids_ml: 2600
 weight_kg: 82.5
 bmi: 26.1
-fat_mass_pct: 25.0
+body_fat_pct: 25.0
 muscle_mass_pct: 71.3
 bone_mass_pct: 3.7
 body_water_pct: 52.0
@@ -43,7 +43,7 @@ id: weight-001
 entry_date: "2026-05-01"
 logged_at: "2026-05-01T07:00:00Z"
 weight_kg: 82.5
-fat_mass_pct: 25.0
+body_fat_pct: 25.0
 muscle_mass_pct: 71.3
 bone_mass_pct: 3.7
 body_water_pct: 52.0
@@ -64,7 +64,7 @@ describe('parseVaultFile', () => {
       expect(entry.total_calories).toBe(2100);
       expect(entry.weight_kg).toBe(82.5);
       expect(entry.bmi).toBe(26.1);
-      expect(entry.fat_mass_pct).toBe(25.0);
+      expect(entry.body_fat_pct).toBe(25.0);
       expect(entry.muscle_mass_pct).toBe(71.3);
       expect(entry.bone_mass_pct).toBe(3.7);
       expect(entry.body_water_pct).toBe(52.0);
@@ -87,7 +87,7 @@ describe('parseVaultFile', () => {
     expect(entry!.entry_type).toBe('weight_entry');
     if (entry && entry.entry_type === 'weight_entry') {
       expect(entry.weight_kg).toBe(82.5);
-      expect(entry.fat_mass_pct).toBe(25.0);
+      expect(entry.body_fat_pct).toBe(25.0);
       expect(entry.muscle_mass_pct).toBe(71.3);
       expect(entry.bone_mass_pct).toBe(3.7);
       expect(entry.body_water_pct).toBe(52.0);
