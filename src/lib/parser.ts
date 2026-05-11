@@ -16,7 +16,8 @@ export function extractFrontmatter(text: string): Record<string, unknown> | null
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
       return parsed as Record<string, unknown>;
     }
-  } catch {
+  } catch (err) {
+    console.warn('[extractFrontmatter] YAML parse error:', err instanceof Error ? err.message : String(err));
     /* silently ignore malformed YAML */
   }
   return null;

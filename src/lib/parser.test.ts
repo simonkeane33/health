@@ -95,6 +95,23 @@ describe('parseVaultFile', () => {
     }
   });
 
+  it('parses a weight entry with notes containing colons', () => {
+    const text = `---\nid: weight-2026-05-11-0850\nentry_type: weight_entry\nlogged_at: '2026-05-11T08:50:00'\nentry_date: '2026-05-11'\nweight_kg: 93.3\nbody_fat_pct: 25.0\nmuscle_mass_pct: 71.3\nbone_mass_pct: 3.7\nbody_water_pct: 52.0\nsource: withings\nconfidence: 1.0\nnotes: \"Weighed in from Withings scale screenshot. Body composition: Fat 25.0%, Muscle 71.3%, Bone 3.7%, Water 52.0%. Fasted morning weigh-in.\"\n---\n\n# Weight entry\n`;
+    const entry = parseVaultFile('weight-colons.md', text);
+    expect(entry).not.toBeNull();
+    expect(entry!.entry_type).toBe('weight_entry');
+    if (entry && entry.entry_type === 'weight_entry') {
+      expect(entry.weight_kg).toBe(93.3);
+      expect(entry.notes).toContain('Body composition:');
+    }
+  });
+
+  it('returns null for files with malformed YAML (unquoted colons in notes)', () => {
+    const text = `---\nid: weight-2026-05-11-0850\nentry_type: weight_entry\nlogged_at: '2026-05-11T08:50:00'\nentry_date: '2026-05-11'\nweight_kg: 93.3\nnotes: Body composition: Fat 25.0%\n---\n\n# Weight entry\n`;
+    const entry = parseVaultFile('weight-bad-yaml.md', text);
+    expect(entry).toBeNull();
+  });
+
   it('returns null for files without frontmatter', () => {
     const entry = parseVaultFile('note.md', 'Just some plain text without YAML front matter.');
     expect(entry).toBeNull();
