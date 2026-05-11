@@ -7,6 +7,7 @@ export interface AggregatedDay {
   carbs_g: number;
   fat_g: number;
   fiber_g: number;
+  sugar_g: number;
   fluids_ml: number;
   alcohol_units: number;
   food_entries: number;
@@ -44,6 +45,7 @@ export function aggregateDailySummaries(
       carbs_g: note.carbs_g ?? 0,
       fat_g: note.fat_g ?? 0,
       fiber_g: note.fiber_g ?? 0,
+      sugar_g: note.sugar_g ?? 0,
       fluids_ml: note.fluids_ml ?? 0,
       alcohol_units: note.alcohol_units ?? 0,
       food_entries: note.food_entries ?? 0,
@@ -105,6 +107,7 @@ export function aggregateDailySummaries(
       carbs_g: sum(foods, 'carbs_g'),
       fat_g: sum(foods, 'fat_g'),
       fiber_g: sum(foods, 'fiber_g'),
+      sugar_g: sum(foods, 'sugar_g'),
       fluids_ml: sum(foods, 'fluids_ml'),
       alcohol_units: sum(foods, 'alcohol_units'),
       food_entries: foods.length,
@@ -128,6 +131,7 @@ export function aggregateDailySummaries(
         carbs_g: existing.carbs_g || computed.carbs_g,
         fat_g: existing.fat_g || computed.fat_g,
         fiber_g: existing.fiber_g || computed.fiber_g,
+        sugar_g: existing.sugar_g || computed.sugar_g,
         fluids_ml: existing.fluids_ml || computed.fluids_ml,
         alcohol_units: existing.alcohol_units || computed.alcohol_units,
         food_entries: existing.food_entries || computed.food_entries,
@@ -160,6 +164,7 @@ function normalizeToDailySummary(day: AggregatedDay): DailySummary {
     carbs_g: day.carbs_g,
     fat_g: day.fat_g,
     fiber_g: day.fiber_g,
+    sugar_g: day.sugar_g,
     fluids_ml: day.fluids_ml,
     alcohol_units: day.alcohol_units,
     food_entries: day.food_entries,

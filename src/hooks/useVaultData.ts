@@ -3,15 +3,10 @@
 import { useState, useCallback } from 'react';
 import { parseVaultFile } from '@/lib/parser';
 import { aggregateDailySummaries } from '@/lib/aggregator';
-import type { FoodEntry, WeightEntry, DailySummary, VaultEntry, ExerciseEntry } from '@/lib/schemas';
+import type { FoodEntry, WeightEntry, DailySummary, ExerciseEntry } from '@/lib/schemas';
+import type { VaultData } from '@/lib/types';
 
-export interface VaultData {
-  foodEntries: FoodEntry[];
-  weightEntries: WeightEntry[];
-  dailySummaries: DailySummary[];
-  exerciseEntries: ExerciseEntry[];
-  allEntries: VaultEntry[];
-}
+export type { VaultData };
 
 export function useVaultData() {
   const [data, setData] = useState<VaultData | null>(null);

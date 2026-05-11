@@ -61,6 +61,7 @@ export interface DailySummary {
   carbs_g?: number;
   fat_g?: number;
   fiber_g?: number;
+  sugar_g?: number;
   fluids_ml?: number;
   alcohol_units?: number;
   food_entries?: number;

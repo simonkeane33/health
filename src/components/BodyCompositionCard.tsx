@@ -35,43 +35,40 @@ export function BodyCompositionCard({ summaries }: Props) {
         )}
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Primary metrics row */}
-        <div className="grid grid-cols-3 gap-4">
-          <Metric label="Weight" value={latest.weight_kg} unit="kg" decimals={1} prev={prev?.weight_kg} />
-          <Metric label="Fat Mass" value={latest.body_fat_pct} unit="%" decimals={1} prev={prev?.body_fat_pct} />
-          <Metric label="BMI" value={latest.bmi} unit="" decimals={1} prev={prev?.bmi} />
-        </div>
-
-        {/* Segmented bar visualization */}
+        {/* Primary metrics — the three components that total 100% and fill the bar */}
         {latest.body_fat_pct != null && latest.muscle_mass_pct != null && latest.bone_mass_pct != null && (
-          <div className="space-y-2">
-            <div className="h-3 w-full rounded-full flex overflow-hidden">
-              <div
-                className="h-full bg-cyan-400"
-                style={{ width: `${latest.body_fat_pct}%` }}
-              />
-              <div
-                className="h-full bg-indigo-400"
-                style={{ width: `${latest.muscle_mass_pct}%` }}
-              />
-              <div
-                className="h-full bg-indigo-700"
-                style={{ width: `${latest.bone_mass_pct}%` }}
-              />
+          <>
+            <div className="grid grid-cols-3 gap-4">
+              <Metric label="Fat Mass" value={latest.body_fat_pct} unit="%" decimals={1} prev={prev?.body_fat_pct} />
+              <Metric label="Muscle Mass" value={latest.muscle_mass_pct} unit="%" decimals={1} prev={prev?.muscle_mass_pct} />
+              <Metric label="Bone Mass" value={latest.bone_mass_pct} unit="%" decimals={1} prev={prev?.bone_mass_pct} />
             </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-              <LegendItem color="bg-cyan-400" label="Fat Mass" value={latest.body_fat_pct} />
-              <LegendItem color="bg-indigo-400" label="Muscle Mass" value={latest.muscle_mass_pct} />
-              <LegendItem color="bg-indigo-700" label="Bone Mass" value={latest.bone_mass_pct} />
+
+            {/* Segmented bar visualization */}
+            <div className="space-y-2">
+              <div className="h-3 w-full rounded-full flex overflow-hidden">
+                <div
+                  className="h-full bg-cyan-400"
+                  style={{ width: `${latest.body_fat_pct}%` }}
+                />
+                <div
+                  className="h-full bg-indigo-400"
+                  style={{ width: `${latest.muscle_mass_pct}%` }}
+                />
+                <div
+                  className="h-full bg-indigo-700"
+                  style={{ width: `${latest.bone_mass_pct}%` }}
+                />
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                <LegendItem color="bg-cyan-400" label="Fat Mass" value={latest.body_fat_pct} />
+                <LegendItem color="bg-indigo-400" label="Muscle Mass" value={latest.muscle_mass_pct} />
+                <LegendItem color="bg-indigo-700" label="Bone Mass" value={latest.bone_mass_pct} />
+              </div>
             </div>
-          </div>
+          </>
         )}
 
-        {/* Secondary metrics */}
-        <div className="grid grid-cols-2 gap-4">
-          <Metric label="Body Water" value={latest.body_water_pct} unit="%" decimals={1} />
-          <Metric label="Muscle Mass" value={latest.muscle_mass_pct} unit="%" decimals={1} />
-        </div>
       </CardContent>
     </Card>
   );

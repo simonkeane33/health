@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  AreaChart,
-  Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -16,7 +16,228 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 
+/* ── Shared colour palette ── */
+const COLORS = {
+  calories:   { color: '#22d3ee', label: 'Calories' },  // cyan-400
+  sugar_g:    { color: '#f472b6', label: 'Sugar (g)' }, // pink-400
+  protein_g:  { color: '#34d399', label: 'Protein (g)' },// emerald-400
+  carbs_g:    { color: '#fbbf24', label: 'Carbs (g)' }, // amber-400
+  fat_g:      { color: '#a78bfa', label: 'Fat (g)' },   // violet-400
+  fiber_g:    { color: '#fb923c', label: 'Fiber (g)' }, // orange-400
+  weight:     { color: '#818cf8', label: 'Weight (kg)' },// indigo-400
+};
+
+type NutrientKey = 'calories' | 'sugar_g' | 'protein_g' | 'carbs_g' | 'fat_g' | 'fiber_g';
+type MetricKey   = NutrientKey | 'weight';
+
+function gradientId(key: MetricKey) {
+  return `${key}Fill`;
+}
+
+/* ── Data preparation ── */
 type RangeValue = '7' | '14' | '30' | '90' | '365' | 'all';
+
+function filterAndSort(summaries: DailySummary[], range: RangeValue) {
+  if (range === 'all') {
+    return [...summaries].sort(
+      (a, b) => new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime()
+    );
+  }
+  const days = parseInt(range, 10);
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  return summaries
+    .filter((s) => new Date(s.entry_date) >= cutoff)
+    .sort((a, b) => new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime());
+}
+
+/* ── Multi-line Intake Chart with nutrient toggle filters ── */
+
+interface IntakeChartProps {
+  summaries: DailySummary[];
+  range: RangeValue;
+  height?: number;
+}
+
+const INTAKE_KEYS: NutrientKey[] = ['calories', 'sugar_g', 'protein_g', 'carbs_g', 'fat_g', 'fiber_g'];
+
+function defaultActive(summaries: DailySummary[]): Set<NutrientKey> {
+  const has = (k: keyof DailySummary) => summaries.some((s) => typeof s[k] === 'number' && (s[k] as number) > 0);
+  const out: NutrientKey[] = [];
+  if (has('total_calories')) out.push('calories');
+  if (has('sugar_g')) out.push('sugar_g');
+  if (has('protein_g')) out.push('protein_g');
+  if (has('carbs_g')) out.push('carbs_g');
+  if (has('fat_g')) out.push('fat_g');
+  if (has('fiber_g')) out.push('fiber_g');
+  // Fallback: at least show calories if nothing else exists
+  if (out.length === 0) out.push('calories');
+  return new Set(out);
+}
+
+export function IntakeTrendChart({ summaries, range, height = 260 }: IntakeChartProps) {
+  const [active, setActive] = useState<Set<NutrientKey>>(() => defaultActive(summaries));
+
+  const data = useMemo(() => {
+    return filterAndSort(summaries, range).map((s) => ({
+      date: new Date(s.entry_date).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+      }),
+      calories: s.total_calories ?? 0,
+      sugar_g: s.sugar_g ?? 0,
+      protein_g: s.protein_g ?? 0,
+      carbs_g: s.carbs_g ?? 0,
+      fat_g: s.fat_g ?? 0,
+      fiber_g: s.fiber_g ?? 0,
+    }));
+  }, [summaries, range]);
+
+  // ── derive visible range for dual axes ──
+  const visible = Array.from(active);
+  const calorieVisible = visible.includes('calories');
+  const gramVisible = visible.some((k) => k !== 'calories');
+
+  const calorieMax = useMemo(() => {
+    if (!calorieVisible) return 100;
+    const vals = data.map((d) => d.calories);
+    return Math.max(1, Math.ceil(Math.max(...vals) * 1.1));
+  }, [data, calorieVisible]);
+
+  const gramMax = useMemo(() => {
+    if (!gramVisible) return 100;
+    const vals: number[] = [];
+    for (const k of visible) {
+      if (k === 'calories') continue;
+      vals.push(...data.map((d) => d[k]));
+    }
+    return Math.max(1, Math.ceil(Math.max(...vals) * 1.1));
+  }, [data, gramVisible, visible]);
+
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center rounded-lg border border-dashed" style={{ height }}>
+        <p className="text-sm text-muted-foreground">No intake data for selected range.</p>
+      </div>
+    );
+  }
+
+  // Build chart config for tooltip/legend
+  const chartConfig = Object.fromEntries(
+    INTAKE_KEYS.map((k) => [k, { label: COLORS[k].label, color: COLORS[k].color }])
+  );
+
+  const toggle = (key: NutrientKey) => {
+    const next = new Set(active);
+    if (next.has(key)) {
+      if (next.size > 1) next.delete(key);
+    } else {
+      next.add(key);
+    }
+    setActive(next);
+  };
+
+  const showAll = () => setActive(new Set(INTAKE_KEYS));
+
+  return (
+    <div className="flex flex-col gap-3 w-full">
+      {/* Filter pills */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {INTAKE_KEYS.map((key) => {
+          const isActive = active.has(key);
+          return (
+            <button
+              key={key}
+              onClick={() => toggle(key)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors border ${
+                isActive
+                  ? 'bg-primary/15 text-primary border-primary/30'
+                  : 'bg-muted text-muted-foreground border-border hover:text-foreground'
+              }`}
+              style={
+                isActive
+                  ? { color: COLORS[key].color, borderColor: `${COLORS[key].color}44`, backgroundColor: `${COLORS[key].color}15` }
+                  : undefined
+              }
+            >
+              <span
+                className="inline-block h-1.5 w-1.5 rounded-full"
+                style={{ backgroundColor: COLORS[key].color }}
+              />
+              {COLORS[key].label}
+            </button>
+          );
+        })}
+        <button
+          onClick={showAll}
+          className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors border bg-muted text-muted-foreground border-border hover:text-foreground"
+        >
+          Show All
+        </button>
+      </div>
+
+      <ChartContainer config={chartConfig} style={{ height }} className="w-full aspect-auto">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 4, right: gramVisible ? 16 : 4, left: calorieVisible ? 4 : 16, bottom: 0 }}>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+            <XAxis
+              dataKey="date"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              minTickGap={32}
+              tick={{ fontSize: 11, fill: '#a1a1aa' }}
+            />
+            {calorieVisible && (
+              <YAxis
+                yAxisId="cal"
+                domain={[0, calorieMax]}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tick={{ fontSize: 10, fill: '#a1a1aa' }}
+                width={44}
+              />
+            )}
+            {gramVisible && (
+              <YAxis
+                yAxisId="grams"
+                orientation="right"
+                domain={[0, gramMax]}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tick={{ fontSize: 10, fill: '#a1a1aa' }}
+                width={40}
+              />
+            )}
+            <Tooltip content={<ChartTooltipContent />} />
+
+            {visible.map((key) => {
+              const yId = key === 'calories' ? 'cal' : 'grams';
+              const color = COLORS[key].color;
+              return (
+                <Line
+                  key={key}
+                  yAxisId={yId}
+                  type="monotone"
+                  dataKey={key}
+                  name={COLORS[key].label}
+                  stroke={color}
+                  strokeWidth={2.5}
+                  dot={false}
+                  activeDot={{ r: 4, stroke: color, strokeWidth: 2, fill: '#000' }}
+                />
+              );
+            })}
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartContainer>
+    </div>
+  );
+}
+
+/* ── Weight Trend Chart (unchanged API) ── */
 
 interface Props {
   summaries: DailySummary[];
@@ -24,48 +245,9 @@ interface Props {
   height?: number;
 }
 
-/* ── Palette shared with BodyCompositionCard ── */
-const CALORIES_COLOR = '#22d3ee';       /* Tailwind cyan-400  */
-const CALORIES_FILL_STOP = 'rgba(34,211,238,0.35)';
-const WEIGHT_COLOR = '#818cf8';         /* Tailwind indigo-400 */
-const WEIGHT_FILL_STOP = 'rgba(129,140,248,0.35)';
-
-const weightConfig = {
-  weight: {
-    label: 'Weight (kg)',
-    color: WEIGHT_COLOR,
-  },
-};
-
-const caloriesConfig = {
-  calories: {
-    label: 'Calories',
-    color: CALORIES_COLOR,
-  },
-};
-
 export function WeightTrendChart({ summaries, range, height = 260 }: Props) {
   const data = useMemo(() => {
-    const filtered =
-      range === 'all'
-        ? [...summaries].sort(
-            (a, b) =>
-              new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime()
-          )
-        : (() => {
-            const days = parseInt(range, 10);
-            const cutoff = new Date();
-            cutoff.setDate(cutoff.getDate() - days);
-            return summaries
-              .filter((s) => new Date(s.entry_date) >= cutoff)
-              .sort(
-                (a, b) =>
-                  new Date(a.entry_date).getTime() -
-                  new Date(b.entry_date).getTime()
-              );
-          })();
-
-    return filtered
+    return filterAndSort(summaries, range)
       .filter((s) => s.weight_kg != null)
       .map((s) => ({
         date: new Date(s.entry_date).toLocaleDateString('en-GB', {
@@ -91,16 +273,14 @@ export function WeightTrendChart({ summaries, range, height = 260 }: Props) {
   const pad = Math.max((maxW - minW) * 0.2, 1);
   const yDomain = [Math.floor(minW - pad), Math.ceil(maxW + pad)];
 
+  const weightConfig = {
+    weight: { label: 'Weight (kg)', color: COLORS.weight.color },
+  };
+
   return (
-    <ChartContainer config={weightConfig} style={{ height }}>
+    <ChartContainer config={weightConfig} style={{ height }} className="w-full aspect-auto">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-          <defs>
-            <linearGradient id="weightFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={WEIGHT_FILL_STOP} />
-              <stop offset="100%" stopColor={WEIGHT_FILL_STOP} stopOpacity={0} />
-            </linearGradient>
-          </defs>
+        <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
           <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
           <XAxis
             dataKey="date"
@@ -119,104 +299,30 @@ export function WeightTrendChart({ summaries, range, height = 260 }: Props) {
             width={50}
           />
           <Tooltip content={<ChartTooltipContent />} />
-          <Area
+          <Line
             type="monotone"
             dataKey="weight"
             name="Weight (kg)"
-            stroke={WEIGHT_COLOR}
+            stroke={COLORS.weight.color}
             strokeWidth={3}
-            fill="url(#weightFill)"
+            fill="none"
             dot={false}
-            activeDot={{ r: 5, stroke: WEIGHT_COLOR, strokeWidth: 2, fill: '#000' }}
+            activeDot={{ r: 5, stroke: COLORS.weight.color, strokeWidth: 2, fill: '#000' }}
           />
-        </AreaChart>
+        </LineChart>
       </ResponsiveContainer>
     </ChartContainer>
   );
 }
 
+/* ── Back-compat export for any callers still using CaloriesTrendChart ── */
 export function CaloriesTrendChart({ summaries, range, height = 260 }: Props) {
-  const data = useMemo(() => {
-    const filtered =
-      range === 'all'
-        ? [...summaries].sort(
-            (a, b) =>
-              new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime()
-          )
-        : (() => {
-            const days = parseInt(range, 10);
-            const cutoff = new Date();
-            cutoff.setDate(cutoff.getDate() - days);
-            return summaries
-              .filter((s) => new Date(s.entry_date) >= cutoff)
-              .sort(
-                (a, b) =>
-                  new Date(a.entry_date).getTime() -
-                  new Date(b.entry_date).getTime()
-              );
-          })();
-
-    return filtered.map((s) => ({
-      date: new Date(s.entry_date).toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'short',
-      }),
-      calories: s.total_calories ?? 0,
-    }));
-  }, [summaries, range]);
-
-  if (data.length === 0) {
-    return (
-      <div className="flex items-center justify-center rounded-lg border border-dashed" style={{ height }}>
-        <p className="text-sm text-muted-foreground">No calorie data for selected range.</p>
-      </div>
-    );
-  }
-
-  const calories = data.map((d) => d.calories);
-  const maxC = Math.max(...calories);
-  const yMax = Math.ceil(maxC * 1.15);
-
+  const [active, setActive] = useState<Set<NutrientKey>>(new Set(['calories']));
   return (
-    <ChartContainer config={caloriesConfig} style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-          <defs>
-            <linearGradient id="caloriesFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={CALORIES_FILL_STOP} />
-              <stop offset="100%" stopColor={CALORIES_FILL_STOP} stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-          <XAxis
-            dataKey="date"
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            minTickGap={32}
-            tick={{ fontSize: 11, fill: '#a1a1aa' }}
-          />
-          <YAxis
-            domain={[0, yMax]}
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            tick={{ fontSize: 11, fill: '#a1a1aa' }}
-            width={50}
-          />
-          <Tooltip content={<ChartTooltipContent />} />
-          <Area
-            type="monotone"
-            dataKey="calories"
-            name="Calories"
-            stroke={CALORIES_COLOR}
-            strokeWidth={3}
-            fill="url(#caloriesFill)"
-            dot={false}
-            activeDot={{ r: 5, stroke: CALORIES_COLOR, strokeWidth: 2, fill: '#000' }}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </ChartContainer>
+    <IntakeTrendChart
+      summaries={summaries}
+      range={range}
+      height={height}
+    />
   );
 }

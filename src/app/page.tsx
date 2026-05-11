@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { useVaultData } from '@/hooks/useVaultData';
 import { KpiGrid } from '@/components/KpiGrid';
-import { WeightTrendChart, CaloriesTrendChart } from '@/components/CaloriesWeightChart';
+import { WeightTrendChart, IntakeTrendChart } from '@/components/CaloriesWeightChart';
 import { ReviewQueue } from '@/components/ReviewQueue';
 import { RecentEntries } from '@/components/RecentEntries';
 import { FrequentFoods } from '@/components/FrequentFoods';
@@ -28,11 +28,37 @@ import { DailySummaries } from '@/components/DailySummaries';
 import { ExerciseCard } from '@/components/ExerciseCard';
 import { BodyCompositionCard } from '@/components/BodyCompositionCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
+
 type RangeValue = '7' | '14' | '30' | '90' | '365' | 'all';
+
+function RangeFilter({
+  value,
+  onChange,
+}: {
+  value: RangeValue;
+  onChange: (v: RangeValue) => void;
+}) {
+  return (
+    <Select value={String(value)} onValueChange={(v) => onChange(v as RangeValue)}>
+      <SelectTrigger className="h-7 text-xs w-[100px] bg-background/50">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="7">7 days</SelectItem>
+        <SelectItem value="14">14 days</SelectItem>
+        <SelectItem value="30">30 days</SelectItem>
+        <SelectItem value="90">90 days</SelectItem>
+        <SelectItem value="365">1 year</SelectItem>
+        <SelectItem value="all">All time</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
 
 export default function Home() {
   const { data, loading, error, loadFiles } = useVaultData();
-  const [range, setRange] = useState<RangeValue>('30');
+  const [intakeRange, setIntakeRange] = useState<RangeValue>('30');
+  const [weightRange, setWeightRange] = useState<RangeValue>('30');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const loadStatus = data
@@ -57,7 +83,7 @@ export default function Home() {
 
   return (
     <div className="min-h-svh bg-background">
-      {/* Page header — vault controls + range selector + theme */}
+      {/* Page header — vault controls + theme */}
       <header className="border-b px-4 lg:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center rounded-lg bg-primary text-primary-foreground h-8 w-8">
@@ -74,6 +100,13 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-2">
+          {data && (
+            <Badge variant="secondary" className="hidden sm:inline-flex">
+              <span className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-500" />
+              Vault paired
+            </Badge>
+          )}
+
           <input
             ref={inputRef}
             type="file"
@@ -100,20 +133,6 @@ export default function Home() {
               Clear
             </Button>
           )}
-
-          <Select value={String(range)} onValueChange={(v) => setRange(v as RangeValue)}>
-            <SelectTrigger className="h-8 text-xs w-[110px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Last 7 days</SelectItem>
-              <SelectItem value="14">Last 14 days</SelectItem>
-              <SelectItem value="30">Last 30 days</SelectItem>
-              <SelectItem value="90">Last 90 days</SelectItem>
-              <SelectItem value="365">Last year</SelectItem>
-              <SelectItem value="all">All time</SelectItem>
-            </SelectContent>
-          </Select>
 
           <ThemeToggle className="h-8 w-8 rounded-lg border" size="sm" />
         </div>
@@ -143,75 +162,37 @@ export default function Home() {
           </Card>
         ) : (
           <>
-            {/* Hero intro card */}
-            <Card>
-              <CardContent className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr] items-end gap-6 p-6">
-                <div className="space-y-4">
-                  <Badge variant="secondary">
-                    <span className="mr-1 inline-block h-2 w-2 rounded-full bg-primary" />
-                    Vault parsed successfully
-                  </Badge>
-                  <CardTitle className="text-2xl leading-tight">
-                    Your intake, weight and exercise, read straight from Obsidian.
-                  </CardTitle>
-                  <p className="text-muted-foreground">
-                    This dashboard parses your Markdown health notes in the browser, rolls them into daily summaries, and gives you a cleaner overview than raw vault browsing.
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-xs font-medium uppercase text-muted-foreground">Entries</div>
-                    <strong className="block text-2xl tabular-nums">{data.allEntries.length}</strong>
-                    <p className="text-muted-foreground">Food + weight + exercise + summaries</p>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium uppercase text-muted-foreground">Coverage</div>
-                    <strong className="block text-2xl tabular-nums">{data.dailySummaries.length}</strong>
-                    <p className="text-muted-foreground">Tracked days</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* KPIs */}
             <KpiGrid data={data} />
 
             {/* Body Composition */}
             <BodyCompositionCard summaries={data.dailySummaries} />
 
-            {/* Charts — side by side */}
+            {/* Charts — side by side, each with its own range filter */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Card>
+              <Card className="flex flex-col">
                 <CardHeader className="flex flex-row items-center justify-between gap-4">
                   <div>
                     <CardDescription>Intake</CardDescription>
                     <CardTitle>Calories</CardTitle>
                   </div>
-                  <span className="text-muted-foreground text-sm">
-                    {range === 'all' ? 'All time' : range === '365' ? 'Last year' : `Last ${range} days`}
-                  </span>
+                  <RangeFilter value={intakeRange} onChange={setIntakeRange} />
                 </CardHeader>
-                <CardContent>
-                  <div className="relative h-80">
-                    <CaloriesTrendChart summaries={data.dailySummaries} range={range} />
-                  </div>
+                <CardContent className="flex-1">
+                  <IntakeTrendChart summaries={data.dailySummaries} range={intakeRange} />
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="flex flex-col">
                 <CardHeader className="flex flex-row items-center justify-between gap-4">
                   <div>
                     <CardDescription>Trend</CardDescription>
                     <CardTitle>Weight</CardTitle>
                   </div>
-                  <span className="text-muted-foreground text-sm">
-                    {range === 'all' ? 'All time' : range === '365' ? 'Last year' : `Last ${range} days`}
-                  </span>
+                  <RangeFilter value={weightRange} onChange={setWeightRange} />
                 </CardHeader>
-                <CardContent>
-                  <div className="relative h-80">
-                    <WeightTrendChart summaries={data.dailySummaries} range={range} />
-                  </div>
+                <CardContent className="flex-1">
+                  <WeightTrendChart summaries={data.dailySummaries} range={weightRange} />
                 </CardContent>
               </Card>
             </div>

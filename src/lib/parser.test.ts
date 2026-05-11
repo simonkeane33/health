@@ -116,6 +116,17 @@ describe('parseVaultFile', () => {
     const entry = parseVaultFile('note.md', 'Just some plain text without YAML front matter.');
     expect(entry).toBeNull();
   });
+  it('parses a food entry with shorthand entry_type "food" and "calories" field', () => {
+    const text = `---\nid: food-001\nentry_type: food\nentry_date: "2026-05-11"\nlogged_at: "2026-05-11T17:30:00"\nmeal_type: dinner\nfood_name: Chorizo linguine\ncalories: 693\nprotein_g: 27\ncarbs_g: 72\nfat_g: 33\nsource: manual\n---\n`;
+    const entry = parseVaultFile('food-001.md', text);
+    expect(entry).not.toBeNull();
+    expect(entry!.entry_type).toBe('food_entry');
+    if (entry && entry.entry_type === 'food_entry') {
+      expect(entry.estimated_calories).toBe(693);
+      expect(entry.protein_g).toBe(27);
+      expect(entry.items).toContain('Chorizo linguine');
+    }
+  });
 });
 
 describe('parseVaultEntry dispatch', () => {

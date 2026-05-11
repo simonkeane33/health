@@ -118,6 +118,7 @@ export const DailySummarySchema = z.object({
   carbs_g: optionalNumber(),
   fat_g: optionalNumber(),
   fiber_g: optionalNumber(),
+  sugar_g: optionalNumber(),
   fluids_ml: optionalNumber(),
   alcohol_units: optionalNumber(),
   food_entries: optionalNumber(),

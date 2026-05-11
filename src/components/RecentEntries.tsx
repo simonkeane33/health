@@ -26,18 +26,19 @@ function EmptyState({ title, body }: { title: string; body: string }) {
   );
 }
 
-export function RecentEntries({ entries, limit = 8 }: Props) {
-  const sorted = [...entries]
-    .sort((a, b) => new Date(b.logged_at || b.entry_date).getTime() - new Date(a.logged_at || a.entry_date).getTime())
-    .slice(0, limit);
+export function RecentEntries({ entries, onReviewChange }: Props) {
+  const today = new Date().toISOString().split('T')[0];
+  const todays = [...entries]
+    .filter((e) => e.entry_date === today)
+    .sort((a, b) => new Date(b.logged_at || b.entry_date).getTime() - new Date(a.logged_at || a.entry_date).getTime());
 
-  if (sorted.length === 0) {
+  if (todays.length === 0) {
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Recent entries</div>
-          <CardTitle className="text-lg mb-4">Latest meals and drinks</CardTitle>
-          <EmptyState title="No entries yet" body="Load your Health folder or use the demo data to preview." />
+          <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Today's entries</div>
+          <CardTitle className="text-lg mb-4">Meals and drinks today</CardTitle>
+          <EmptyState title="No entries today" body="Log a meal or drink to see it here." />
         </CardContent>
       </Card>
     );
@@ -46,8 +47,8 @@ export function RecentEntries({ entries, limit = 8 }: Props) {
   return (
     <Card>
       <CardHeader className="pb-0">
-        <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Recent entries</div>
-        <CardTitle className="text-lg">Latest meals and drinks</CardTitle>
+        <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Today's entries</div>
+        <CardTitle className="text-lg">Meals and drinks today</CardTitle>
       </CardHeader>
       <CardContent className="overflow-auto">
         <table className="w-full text-sm border-collapse">
@@ -61,7 +62,7 @@ export function RecentEntries({ entries, limit = 8 }: Props) {
             </tr>
           </thead>
           <tbody>
-            {sorted.map((entry) => (
+            {todays.map((entry) => (
               <tr key={entry.id}>
                 <td className="py-3 px-2 border-b border-border whitespace-nowrap">
                   {formatDateTime(entry.logged_at || entry.entry_date)}
