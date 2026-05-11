@@ -24,6 +24,10 @@ import { WeightTrendChart, IntakeTrendChart } from '@/components/CaloriesWeightC
 import { ReviewQueue } from '@/components/ReviewQueue';
 import { RecentEntries } from '@/components/RecentEntries';
 import { FrequentFoods } from '@/components/FrequentFoods';
+import { FoodVsDrinkCard } from '@/components/FoodVsDrinkCard';
+import { RecurringFoodsPanel } from '@/components/RecurringFoodsPanel';
+import { RecurringDrinksPanel } from '@/components/RecurringDrinksPanel';
+import { HighestCalorieItems } from '@/components/HighestCalorieItems';
 import { DailySummaries } from '@/components/DailySummaries';
 import { ExerciseCard } from '@/components/ExerciseCard';
 import { BodyCompositionCard } from '@/components/BodyCompositionCard';
@@ -206,10 +210,18 @@ export default function Home() {
               <DailySummaries entries={data.dailySummaries} />
             </div>
 
-            {/* Bottom row — Review + FrequentFoods side by side */}
+            {/* Bottom row — Review, patterns, rankings */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ReviewQueue entries={data.foodEntries} />
-              <FrequentFoods entries={data.foodEntries} />
+              <div className="flex flex-col gap-4">
+                <ReviewQueue entries={data.foodEntries} />
+                <FoodVsDrinkCard entries={data.foodEntries} />
+                <FrequentFoods entries={data.foodEntries} />
+              </div>
+              <div className="flex flex-col gap-4">
+                <RecurringFoodsPanel entries={data.foodEntries} />
+                <RecurringDrinksPanel entries={data.foodEntries} />
+                <HighestCalorieItems entries={data.foodEntries} />
+              </div>
             </div>
 
             {/* Footer info */}
