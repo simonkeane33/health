@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { useVaultData } from '@/hooks/useVaultData';
 import { KpiGrid } from '@/components/KpiGrid';
-import { CaloriesWeightChart } from '@/components/CaloriesWeightChart';
+import { WeightTrendChart, CaloriesTrendChart } from '@/components/CaloriesWeightChart';
 import { ReviewQueue } from '@/components/ReviewQueue';
 import { RecentEntries } from '@/components/RecentEntries';
 import { FrequentFoods } from '@/components/FrequentFoods';
@@ -179,23 +179,42 @@ export default function Home() {
             {/* Body Composition */}
             <BodyCompositionCard summaries={data.dailySummaries} />
 
-            {/* Chart — full width */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between gap-4">
-                <div>
-                  <CardDescription>Trends</CardDescription>
-                  <CardTitle>Calories and weight</CardTitle>
-                </div>
-                <span className="text-muted-foreground text-sm">
-                  {range === 'all' ? 'All time' : range === '365' ? 'Last year' : `Last ${range} days`}
-                </span>
-              </CardHeader>
-              <CardContent>
-                <div className="relative h-80">
-                  <CaloriesWeightChart summaries={data.dailySummaries} range={range} />
-                </div>
-              </CardContent>
-            </Card>
+            {/* Charts — side by side */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between gap-4">
+                  <div>
+                    <CardDescription>Intake</CardDescription>
+                    <CardTitle>Calories</CardTitle>
+                  </div>
+                  <span className="text-muted-foreground text-sm">
+                    {range === 'all' ? 'All time' : range === '365' ? 'Last year' : `Last ${range} days`}
+                  </span>
+                </CardHeader>
+                <CardContent>
+                  <div className="relative h-80">
+                    <CaloriesTrendChart summaries={data.dailySummaries} range={range} />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between gap-4">
+                  <div>
+                    <CardDescription>Trend</CardDescription>
+                    <CardTitle>Weight</CardTitle>
+                  </div>
+                  <span className="text-muted-foreground text-sm">
+                    {range === 'all' ? 'All time' : range === '365' ? 'Last year' : `Last ${range} days`}
+                  </span>
+                </CardHeader>
+                <CardContent>
+                  <div className="relative h-80">
+                    <WeightTrendChart summaries={data.dailySummaries} range={range} />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Exercise — full width below chart */}
             <ExerciseCard entries={data.exerciseEntries} />
