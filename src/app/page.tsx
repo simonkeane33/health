@@ -119,7 +119,7 @@ export default function Home() {
       </header>
 
       {/* Main content */}
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6 max-w-[1600px] mx-auto">
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
         {!data ? (
           <Card>
             <CardContent className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr] items-end gap-6 p-6">
