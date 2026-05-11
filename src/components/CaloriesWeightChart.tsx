@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react';
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -24,17 +24,23 @@ interface Props {
   height?: number;
 }
 
+/* ── Palette shared with BodyCompositionCard ── */
+const CALORIES_COLOR = '#22d3ee';       /* Tailwind cyan-400  */
+const CALORIES_FILL_STOP = 'rgba(34,211,238,0.35)';
+const WEIGHT_COLOR = '#818cf8';         /* Tailwind indigo-400 */
+const WEIGHT_FILL_STOP = 'rgba(129,140,248,0.35)';
+
 const weightConfig = {
   weight: {
     label: 'Weight (kg)',
-    color: 'hsl(var(--chart-2))',
+    color: WEIGHT_COLOR,
   },
 };
 
 const caloriesConfig = {
   calories: {
     label: 'Calories',
-    color: 'hsl(var(--chart-1))',
+    color: CALORIES_COLOR,
   },
 };
 
@@ -88,35 +94,42 @@ export function WeightTrendChart({ summaries, range, height = 260 }: Props) {
   return (
     <ChartContainer config={weightConfig} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-          <CartesianGrid vertical={false} strokeDasharray="3 3" />
+        <AreaChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="weightFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={WEIGHT_FILL_STOP} />
+              <stop offset="100%" stopColor={WEIGHT_FILL_STOP} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
           <XAxis
             dataKey="date"
             tickLine={false}
             axisLine={false}
             tickMargin={8}
             minTickGap={32}
-            tick={{ fontSize: 11 }}
+            tick={{ fontSize: 11, fill: '#a1a1aa' }}
           />
           <YAxis
             domain={yDomain}
             tickLine={false}
             axisLine={false}
             tickMargin={8}
-            tick={{ fontSize: 11 }}
+            tick={{ fontSize: 11, fill: '#a1a1aa' }}
             width={50}
           />
           <Tooltip content={<ChartTooltipContent />} />
-          <Line
+          <Area
             type="monotone"
             dataKey="weight"
             name="Weight (kg)"
-            stroke="var(--color-weight)"
-            strokeWidth={2.5}
-            dot={{ r: 4, fill: 'var(--color-weight)', strokeWidth: 0 }}
-            activeDot={{ r: 6 }}
+            stroke={WEIGHT_COLOR}
+            strokeWidth={3}
+            fill="url(#weightFill)"
+            dot={false}
+            activeDot={{ r: 5, stroke: WEIGHT_COLOR, strokeWidth: 2, fill: '#000' }}
           />
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
     </ChartContainer>
   );
@@ -167,35 +180,42 @@ export function CaloriesTrendChart({ summaries, range, height = 260 }: Props) {
   return (
     <ChartContainer config={caloriesConfig} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-          <CartesianGrid vertical={false} strokeDasharray="3 3" />
+        <AreaChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="caloriesFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={CALORIES_FILL_STOP} />
+              <stop offset="100%" stopColor={CALORIES_FILL_STOP} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
           <XAxis
             dataKey="date"
             tickLine={false}
             axisLine={false}
             tickMargin={8}
             minTickGap={32}
-            tick={{ fontSize: 11 }}
+            tick={{ fontSize: 11, fill: '#a1a1aa' }}
           />
           <YAxis
             domain={[0, yMax]}
             tickLine={false}
             axisLine={false}
             tickMargin={8}
-            tick={{ fontSize: 11 }}
+            tick={{ fontSize: 11, fill: '#a1a1aa' }}
             width={50}
           />
           <Tooltip content={<ChartTooltipContent />} />
-          <Line
+          <Area
             type="monotone"
             dataKey="calories"
             name="Calories"
-            stroke="var(--color-calories)"
-            strokeWidth={2.5}
-            dot={{ r: 3, fill: 'var(--color-calories)', strokeWidth: 0 }}
-            activeDot={{ r: 5 }}
+            stroke={CALORIES_COLOR}
+            strokeWidth={3}
+            fill="url(#caloriesFill)"
+            dot={false}
+            activeDot={{ r: 5, stroke: CALORIES_COLOR, strokeWidth: 2, fill: '#000' }}
           />
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
     </ChartContainer>
   );
