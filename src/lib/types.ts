@@ -102,4 +102,5 @@ export interface VaultData {
   dailySummaries: DailySummary[];
   exerciseEntries: ExerciseEntry[];
   allEntries: VaultEntry[];
+  imageMap: Record<string, string>;
 }

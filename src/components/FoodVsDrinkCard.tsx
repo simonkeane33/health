@@ -26,8 +26,8 @@ export function FoodVsDrinkCard({ entries }: Props) {
   return (
     <Card>
       <CardHeader className="pb-0">
-        <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Balance</div>
-        <CardTitle className="text-lg">Food vs Drink</CardTitle>
+        <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Food vs drinks</div>
+        <CardTitle className="text-lg">How many are food or drinks</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex items-center gap-3 mb-4">
@@ -61,7 +61,7 @@ export function FoodVsDrinkCard({ entries }: Props) {
             Food {foodPct.toFixed(0)}%
           </span>
           <span className="flex items-center gap-1">
-            Drink {drinkPct.toFixed(0)}%
+            Drinks {drinkPct.toFixed(0)}%
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
           </span>
         </div>

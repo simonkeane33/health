@@ -31,15 +31,15 @@ export function RecurringDrinksPanel({ entries, limit = 8 }: Props) {
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Patterns</div>
-          <CardTitle className="text-lg mb-4">Recurring drinks</CardTitle>
+          <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Repeat drinks</div>
+          <CardTitle className="text-lg mb-4">Drinks you log often</CardTitle>
           <div className="flex items-center gap-3 py-3">
             <div className="w-14 h-14 rounded-[18px] grid place-items-center bg-accent text-primary shadow-[inset_0_0_0_1px_var(--border)]">
               <GlassWater className="w-5 h-5" />
             </div>
             <div>
-              <strong className="text-foreground block mb-0.5">No recurring drinks yet.</strong>
-              <span className="text-sm text-muted-foreground">Recurring beverages will appear here.</span>
+              <strong className="text-foreground block mb-0.5">No repeat drinks yet.</strong>
+              <span className="text-sm text-muted-foreground">Drinks that appear more than once will show here.</span>
             </div>
           </div>
         </CardContent>
@@ -50,8 +50,8 @@ export function RecurringDrinksPanel({ entries, limit = 8 }: Props) {
   return (
     <Card>
       <CardHeader className="pb-0">
-        <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Patterns</div>
-        <CardTitle className="text-lg">Recurring drinks</CardTitle>
+        <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Repeat drinks</div>
+        <CardTitle className="text-lg">Drinks you log often</CardTitle>
       </CardHeader>
       <CardContent>
         <ul className="flex flex-col gap-2">

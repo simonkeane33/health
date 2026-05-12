@@ -19,7 +19,7 @@ export function HighestCalorieItems({ entries, limit = 10 }: Props) {
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Rankings</div>
+          <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Most energy</div>
           <CardTitle className="text-lg mb-4">Highest-calorie entries</CardTitle>
           <div className="flex items-center gap-3 py-3">
             <div className="w-14 h-14 rounded-[18px] grid place-items-center bg-accent text-primary shadow-[inset_0_0_0_1px_var(--border)]">
@@ -38,7 +38,7 @@ export function HighestCalorieItems({ entries, limit = 10 }: Props) {
   return (
     <Card>
       <CardHeader className="pb-0">
-        <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Rankings</div>
+        <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Most energy</div>
         <CardTitle className="text-lg">Highest-calorie entries</CardTitle>
       </CardHeader>
       <CardContent>

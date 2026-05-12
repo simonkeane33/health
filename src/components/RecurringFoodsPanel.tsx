@@ -31,15 +31,15 @@ export function RecurringFoodsPanel({ entries, limit = 8 }: Props) {
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Patterns</div>
-          <CardTitle className="text-lg mb-4">Recurring meals</CardTitle>
+          <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Repeat meals</div>
+          <CardTitle className="text-lg mb-4">Meals you log often</CardTitle>
           <div className="flex items-center gap-3 py-3">
             <div className="w-14 h-14 rounded-[18px] grid place-items-center bg-accent text-primary shadow-[inset_0_0_0_1px_var(--border)]">
               <Salad className="w-5 h-5" />
             </div>
             <div>
-              <strong className="text-foreground block mb-0.5">No recurring meals yet.</strong>
-              <span className="text-sm text-muted-foreground">Repeat meals will surface here once you log them more than once.</span>
+              <strong className="text-foreground block mb-0.5">No repeat meals yet.</strong>
+              <span className="text-sm text-muted-foreground">Meals that appear more than once will show here.</span>
             </div>
           </div>
         </CardContent>
@@ -50,8 +50,8 @@ export function RecurringFoodsPanel({ entries, limit = 8 }: Props) {
   return (
     <Card>
       <CardHeader className="pb-0">
-        <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Patterns</div>
-        <CardTitle className="text-lg">Recurring meals</CardTitle>
+        <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Repeat meals</div>
+        <CardTitle className="text-lg">Meals you log often</CardTitle>
       </CardHeader>
       <CardContent>
         <ul className="flex flex-col gap-2">
