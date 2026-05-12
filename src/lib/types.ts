@@ -26,7 +26,7 @@ export interface FoodEntry {
   meal_type: string;
   source: string;
   source_channel?: string;
-  image?: string;
+  attachments?: string[];
   items: string[];
   estimated_calories: number;
   protein_g?: number;

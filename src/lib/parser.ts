@@ -6,7 +6,7 @@ import type { FoodEntry, WeightEntry, DailySummary, ExerciseEntry, VaultEntry } 
 /* Front-matter extraction                                              */
 /* ------------------------------------------------------------------ */
 
-const YAML_BLOCK_RE = /^---\n([\s\S]*?)\n---\s*\n/;
+const YAML_BLOCK_RE = /^---\r?\n([\s\S]*?)\r?\n---\s*\r?\n/;
 
 export function extractFrontmatter(text: string): Record<string, unknown> | null {
   const match = text.match(YAML_BLOCK_RE);
@@ -85,6 +85,11 @@ function normalizeFields(data: Record<string, unknown>): Record<string, unknown>
     out.source = out.logged_by;
   }
 
+  // Bridge `hermes_confidence` → `confidence` when confidence is absent
+  if (out.confidence === undefined && out.hermes_confidence !== undefined) {
+    out.confidence = out.hermes_confidence;
+  }
+
   // Fill required fields with sensible defaults when absent
   if (out.meal_type === undefined) {
     out.meal_type = '';
@@ -116,11 +121,59 @@ export function parseVaultEntry(data: Record<string, unknown>): VaultEntry | nul
   if (entryType === 'weight_entry') return parseWeightEntry(data);
   if (entryType === 'daily_summary') return parseDailySummary(data);
   if (entryType === 'exercise_entry') return parseExerciseEntry(data);
-  return null;
+/* ------------------------------------------------------------------ */
+/* Attachment extraction from Markdown body                            */
+/* ------------------------------------------------------------------ */
+
+export function extractAttachmentsFromBody(text: string): string[] {
+  const frontmatterEnd = text.search(/^---\s*\n/m);
+  const bodyStart = frontmatterEnd >= 0 ? text.indexOf('---', frontmatterEnd + 3) + 3 : 0;
+  const body = text.slice(bodyStart);
+
+  const attachments: string[] = [];
+  const seen = new Set<string>();
+
+  // Obsidian wiki-style: ![[filename.jpg]]
+  const wikiRe = /!\[\[([^[\]\n]+)]]/g;
+  let match: RegExpExecArray | null;
+  while ((match = wikiRe.exec(body)) !== null) {
+    const path = match[1].trim();
+    if (!seen.has(path)) {
+      seen.add(path);
+      attachments.push(path);
+    }
+  }
+
+  // Standard markdown: ![](path) or ![alt](path)
+  const mdRe = /!\[[^\]]*]\(([^)\s]+)\)/g;
+  while ((match = mdRe.exec(body)) !== null) {
+    const path = match[1].trim();
+    if (!seen.has(path)) {
+      seen.add(path);
+      attachments.push(path);
+    }
+  }
+
+  return attachments;
 }
+
+/* ------------------------------------------------------------------ */
+/* Vault file parsing                                                  */
+/* ------------------------------------------------------------------ */
 
 export function parseVaultFile(name: string, text: string): VaultEntry | null {
   const frontmatter = extractFrontmatter(text);
   if (!frontmatter) return null;
-  return parseVaultEntry(frontmatter);
+  const entry = parseVaultEntry(frontmatter);
+  if (!entry) return null;
+
+  // For food entries, scan body for image attachments
+  if (entry.entry_type === 'food_entry' && entry) {
+    const attachments = extractAttachmentsFromBody(text);
+    if (attachments.length > 0) {
+      return { ...entry, attachments } as VaultEntry;
+    }
+  }
+
+  return entry;
 }

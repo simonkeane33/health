@@ -8,6 +8,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import type { DailySummary } from '@/lib/types';
@@ -15,6 +16,7 @@ import { formatShortDate } from '@/lib/utils';
 import {
   ChartContainer,
   ChartTooltipContent,
+  ChartLegendContent,
 } from '@/components/ui/chart';
 
 /* ── Shared colour palette ── */
@@ -36,7 +38,7 @@ function gradientId(key: MetricKey) {
 }
 
 /* ── Data preparation ── */
-type RangeValue = '7' | '14' | '30' | '90' | '365' | 'all';
+export type RangeValue = '7' | '14' | '30' | '90' | '365' | 'all';
 
 function filterAndSort(summaries: DailySummary[], range: RangeValue) {
   if (range === 'all') {
@@ -319,5 +321,158 @@ export function CaloriesTrendChart({ summaries, range, height = 260 }: Props) {
       range={range}
       height={height}
     />
+  );
+}
+
+/* ── Combined Calories + Weight Trend Chart with dual axes and trend summary ── */
+
+interface CombinedTrendProps {
+  summaries: DailySummary[];
+  range: RangeValue;
+  height?: number;
+}
+
+export function CombinedCaloriesWeightChart({ summaries, range, height = 260 }: CombinedTrendProps) {
+  const { data, trendText } = useMemo(() => {
+    const filtered = filterAndSort(summaries, range);
+
+    // Build aligned data: one row per day that has at least one metric
+    const map = new Map<string, { date: string; calories: number | null; weight: number | null }>();
+    for (const s of filtered) {
+      const d = s.entry_date;
+      if (!map.has(d)) {
+        map.set(d, { date: formatShortDate(d), calories: null, weight: null });
+      }
+      const row = map.get(d)!;
+      if (typeof s.total_calories === 'number' && s.total_calories > 0) {
+        row.calories = s.total_calories;
+      }
+      if (typeof s.weight_kg === 'number' && s.weight_kg > 0) {
+        row.weight = Number(s.weight_kg);
+      }
+    }
+    const chartData = Array.from(map.values());
+
+    // Weight trend summary
+    const weights = chartData.map((d) => d.weight).filter((v): v is number => v !== null);
+    let trend = '';
+    if (weights.length >= 2) {
+      const first = weights[0];
+      const last = weights[weights.length - 1];
+      const delta = last - first;
+      const abs = Math.abs(delta).toFixed(1);
+      const dir = delta < 0 ? 'down' : 'up';
+      const dayCount = chartData.length;
+      trend = `Weight ${dir} ${abs} kg over ${dayCount} day${dayCount !== 1 ? 's' : ''}`;
+    } else if (weights.length === 1) {
+      trend = `Single weight entry (${weights[0]} kg)`;
+    } else {
+      trend = 'No weight data';
+    }
+
+    return { data: chartData, trendText: trend };
+  }, [summaries, range]);
+
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center rounded-lg border border-dashed" style={{ height }}>
+        <p className="text-sm text-muted-foreground">No data for selected range.</p>
+      </div>
+    );
+  }
+
+  const calorieValues = data
+    .map((d) => d.calories)
+    .filter((v): v is number => v !== null);
+  const weightValues = data
+    .map((d) => d.weight)
+    .filter((v): v is number => v !== null);
+
+  const calorieMax = calorieValues.length ? Math.max(1, Math.ceil(Math.max(...calorieValues) * 1.1)) : 100;
+  const calorieMin = calorieValues.length ? Math.max(0, Math.floor(Math.min(...calorieValues) * 0.95)) : 0;
+
+  const weightMax = weightValues.length ? Math.ceil(Math.max(...weightValues) * 1.02) : 100;
+  const weightMin = weightValues.length ? Math.floor(Math.min(...weightValues) * 0.98) : 0;
+
+  const combinedConfig = {
+    calories: { label: 'Calories (kcal)', color: COLORS.calories.color },
+    weight: { label: 'Weight (kg)', color: COLORS.weight.color },
+  };
+
+  const hasCalories = calorieValues.length > 0;
+  const hasWeight = weightValues.length > 0;
+
+  return (
+    <div className="flex flex-col gap-2 w-full">
+      {trendText && (
+        <p className="text-xs text-muted-foreground leading-relaxed">{trendText}</p>
+      )}
+      <ChartContainer config={combinedConfig} style={{ height }} className="w-full aspect-auto">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 4, right: 16, left: 4, bottom: 0 }}>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+            <XAxis
+              dataKey="date"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              minTickGap={32}
+              tick={{ fontSize: 11, fill: '#a1a1aa' }}
+            />
+            {hasCalories && (
+              <YAxis
+                yAxisId="cal"
+                domain={[calorieMin, calorieMax]}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tick={{ fontSize: 10, fill: '#a1a1aa' }}
+                width={50}
+              />
+            )}
+            {hasWeight && (
+              <YAxis
+                yAxisId="wgt"
+                orientation="right"
+                domain={[weightMin, weightMax]}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tick={{ fontSize: 10, fill: '#a1a1aa' }}
+                width={46}
+              />
+            )}
+            <Tooltip content={<ChartTooltipContent />} />
+            <Legend content={<ChartLegendContent />} />
+            {hasCalories && (
+              <Line
+                yAxisId="cal"
+                type="monotone"
+                dataKey="calories"
+                name="Calories"
+                stroke={COLORS.calories.color}
+                strokeWidth={2.5}
+                dot={false}
+                connectNulls={false}
+                activeDot={{ r: 4, stroke: COLORS.calories.color, strokeWidth: 2, fill: '#000' }}
+              />
+            )}
+            {hasWeight && (
+              <Line
+                yAxisId="wgt"
+                type="monotone"
+                dataKey="weight"
+                name="Weight (kg)"
+                stroke={COLORS.weight.color}
+                strokeWidth={2.5}
+                dot={false}
+                connectNulls={false}
+                activeDot={{ r: 4, stroke: COLORS.weight.color, strokeWidth: 2, fill: '#000' }}
+              />
+            )}
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartContainer>
+    </div>
   );
 }

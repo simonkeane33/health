@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { parseVaultFile, parseVaultEntry } from '@/lib/parser';
+import { describe, it, expect, vi } from 'vitest';
+import { parseVaultFile, parseVaultEntry, extractFrontmatter } from '@/lib/parser';
 
 const sampleDailySummary = `---
 entry_type: daily_summary
@@ -96,7 +96,7 @@ describe('parseVaultFile', () => {
   });
 
   it('parses a weight entry with notes containing colons', () => {
-    const text = `---\nid: weight-2026-05-11-0850\nentry_type: weight_entry\nlogged_at: '2026-05-11T08:50:00'\nentry_date: '2026-05-11'\nweight_kg: 93.3\nbody_fat_pct: 25.0\nmuscle_mass_pct: 71.3\nbone_mass_pct: 3.7\nbody_water_pct: 52.0\nsource: withings\nconfidence: 1.0\nnotes: \"Weighed in from Withings scale screenshot. Body composition: Fat 25.0%, Muscle 71.3%, Bone 3.7%, Water 52.0%. Fasted morning weigh-in.\"\n---\n\n# Weight entry\n`;
+    const text = `---\nid: weight-2026-05-11-0850\nentry_type: weight_entry\nlogged_at: '2026-05-11T08:50:00'\nentry_date: '2026-05-11'\nweight_kg: 93.3\nbody_fat_pct: 25.0\nmuscle_mass_pct: 71.3\nbone_mass_pct: 3.7\nbody_water_pct: 52.0\nsource: withings\nconfidence: 1.0\nnotes: "Weighed in from Withings scale screenshot. Body composition: Fat 25.0%, Muscle 71.3%, Bone 3.7%, Water 52.0%. Fasted morning weigh-in."\n---\n\n# Weight entry\n`;
     const entry = parseVaultFile('weight-colons.md', text);
     expect(entry).not.toBeNull();
     expect(entry!.entry_type).toBe('weight_entry');
@@ -133,5 +133,185 @@ describe('parseVaultEntry dispatch', () => {
   it('returns null for unknown entry_type', () => {
     const result = parseVaultEntry({ entry_type: 'unknown_thing' });
     expect(result).toBeNull();
+  });
+});
+
+describe('Edge cases — malformed or partial frontmatter', () => {
+  it('returns null for completely missing frontmatter', () => {
+    const text = 'Just some plain text without YAML front matter.';
+    const entry = parseVaultFile('no-frontmatter.md', text);
+    expect(entry).toBeNull();
+  });
+
+  it('returns null for broken YAML syntax (bad indentation)', () => {
+    const text = `---
+entry_type: food_entry
+id: bad-001
+entry_date: "2026-05-01"
+  meal_type: breakfast
+source: manual
+---
+`;
+    const entry = parseVaultFile('bad-indent.md', text);
+    expect(entry).toBeNull();
+  });
+
+  it('parses correctly when notes contain colons and are properly quoted', () => {
+    const text = `---
+entry_type: food_entry
+id: colon-001
+entry_date: "2026-05-01"
+logged_at: "2026-05-01T12:00:00"
+meal_type: lunch
+source: manual
+notes: "Lunch at Joe's Cafe: burger and fries"
+items:
+  - burger
+  - fries
+---
+`;
+    const entry = parseVaultFile('colons-quoted.md', text);
+    expect(entry).not.toBeNull();
+    if (entry && entry.entry_type === 'food_entry') {
+      expect(entry.notes).toBe("Lunch at Joe's Cafe: burger and fries");
+    }
+  });
+
+  it('returns null when notes contain colons and are unquoted', () => {
+    const text = `---
+entry_type: food_entry
+id: colon-002
+entry_date: "2026-05-01"
+logged_at: "2026-05-01T12:00:00"
+meal_type: lunch
+source: manual
+notes: Lunch at Joe's Cafe: burger and fries
+items:
+  - burger
+---
+`;
+    const entry = parseVaultFile('colons-unquoted.md', text);
+    expect(entry).toBeNull();
+  });
+
+  it('parses numeric strings into numbers', () => {
+    const text = `---
+entry_type: food_entry
+id: numeric-001
+entry_date: "2026-05-01"
+logged_at: "2026-05-01T12:00:00"
+meal_type: lunch
+source: manual
+estimated_calories: "450"
+protein_g: "30"
+carbs_g: "60"
+fat_g: "15"
+items:
+  - sandwich
+---
+`;
+    const entry = parseVaultFile('numeric-strings.md', text);
+    expect(entry).not.toBeNull();
+    if (entry && entry.entry_type === 'food_entry') {
+      expect(entry.estimated_calories).toBe(450);
+      expect(entry.protein_g).toBe(30);
+      expect(entry.carbs_g).toBe(60);
+      expect(entry.fat_g).toBe(15);
+    }
+  });
+
+  it('provides sensible defaults for empty / missing required-ish fields', () => {
+    const text = `---
+entry_type: food_entry
+id: empty-001
+entry_date: "2026-05-01"
+logged_at: "2026-05-01T12:00:00"
+items:
+  - apple
+---
+`;
+    const entry = parseVaultFile('empty-fields.md', text);
+    expect(entry).not.toBeNull();
+    if (entry && entry.entry_type === 'food_entry') {
+      expect(entry.meal_type).toBe('');
+      expect(entry.source).toBe('');
+      expect(entry.confidence).toBe(0);
+      expect(entry.needs_review).toBe(false);
+      expect(entry.review_status).toBe('pending');
+      expect(entry.user_confirmed).toBe(false);
+      expect(entry.estimated_calories).toBe(0);
+    }
+  });
+
+  it('logs but does not crash for unknown entry_type values', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const text = `---
+entry_type: mystery_type
+id: unknown-001
+entry_date: "2026-05-01"
+source: manual
+---
+`;
+    const entry = parseVaultFile('unknown-type.md', text);
+    expect(entry).toBeNull();
+    expect(warnSpy).toHaveBeenCalled();
+    const calls = warnSpy.mock.calls.map((c) => c.join(' '));
+    expect(calls.some((c) => c.includes('Unknown'))).toBe(true);
+    warnSpy.mockRestore();
+  });
+
+  it('gracefully handles empty YAML mapping values', () => {
+    const text = `---
+entry_type: food_entry
+id: empty-002
+entry_date: "2026-05-01"
+logged_at: "2026-05-01T12:00:00"
+meal_type: lunch
+source: manual
+protein_g:
+carbs_g:
+fat_g:
+items:
+  - toast
+---
+`;
+    const entry = parseVaultFile('empty-yaml-values.md', text);
+    expect(entry).not.toBeNull();
+    if (entry && entry.entry_type === 'food_entry') {
+      expect(entry.protein_g).toBeUndefined();
+      expect(entry.carbs_g).toBeUndefined();
+      expect(entry.fat_g).toBeUndefined();
+    }
+  });
+
+  it('gracefully handles empty string values for numeric fields', () => {
+    const text = `---
+entry_type: food_entry
+id: empty-003
+entry_date: "2026-05-01"
+logged_at: "2026-05-01T12:00:00"
+meal_type: lunch
+source: manual
+estimated_calories: ""
+protein_g: ""
+items:
+  - toast
+---
+`;
+    const entry = parseVaultFile('empty-string-numeric.md', text);
+    expect(entry).not.toBeNull();
+    if (entry && entry.entry_type === 'food_entry') {
+      expect(entry.estimated_calories).toBe(0);
+      expect(entry.protein_g).toBeUndefined();
+    }
+  });
+
+  it('handles frontmatter with Windows-style line endings', () => {
+    const text = `---\r\nentry_type: weight_entry\r\nid: win-001\r\nentry_date: "2026-05-01"\r\nlogged_at: "2026-05-01T07:00:00"\r\nweight_kg: 80\r\nsource: manual\r\n---\r\n`;
+    const entry = parseVaultFile('windows.md', text);
+    expect(entry).not.toBeNull();
+    if (entry && entry.entry_type === 'weight_entry') {
+      expect(entry.weight_kg).toBe(80);
+    }
   });
 });

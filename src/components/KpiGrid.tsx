@@ -3,6 +3,7 @@
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import type { VaultData } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { computeWeeklyMetrics } from '@/lib/weeklyMetrics';
 
 function Delta({ current, previous, unit }: { current: number; previous?: number; unit?: string }) {
   if (previous === undefined || previous === 0) {
@@ -22,11 +23,47 @@ function Delta({ current, previous, unit }: { current: number; previous?: number
   );
 }
 
+function getBmiLabel(bmi: number): string {
+  if (bmi < 18.5) return 'Underweight';
+  if (bmi < 25) return 'Healthy weight';
+  if (bmi < 30) return 'Overweight';
+  return 'Obese';
+}
+
+function WeeklyDelta({
+  currentAvg,
+  priorAvg,
+  unit,
+  invert = false,
+}: {
+  currentAvg: number | undefined;
+  priorAvg: number | undefined;
+  unit?: string;
+  invert?: boolean;
+}) {
+  if (currentAvg === undefined || priorAvg === undefined) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+  const diff = currentAvg - priorAvg;
+  const pct = ((diff / priorAvg) * 100).toFixed(1);
+  const isDown = diff < 0;
+  const beneficial = invert ? !isDown : isDown; // for weight, down is good; for calories, down is also good (lower intake)
+  const Icon = isDown ? TrendingDown : diff > 0 ? TrendingUp : Minus;
+  const colorClass = beneficial ? 'text-emerald-600' : diff !== 0 ? 'text-destructive' : 'text-muted-foreground';
+
+  return (
+    <span className={`flex items-center gap-1 text-xs ${colorClass}`}>
+      <Icon className="w-3 h-3" />
+      {diff > 0 ? '+' : ''}{diff.toFixed(2)}{unit ? ` ${unit}` : ''} ({pct}%)
+    </span>
+  );
+}
+
 export function KpiGrid({ data }: { data?: VaultData | null }) {
   if (!data) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {['Latest weight', 'Calories today', 'Protein today', 'Fluids today'].map((label) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {['Latest weight', 'BMI', 'Calories today', 'Fluids today', 'Weekly weight', 'Weekly calories'].map((label) => (
           <Card key={label}>
             <CardHeader>
               <CardTitle className="text-xs font-medium tracking-wider uppercase text-muted-foreground">{label}</CardTitle>
@@ -52,35 +89,67 @@ export function KpiGrid({ data }: { data?: VaultData | null }) {
   const weightRemaining = Math.max(0, weightCurrent - weightTarget);
   const bmiCurrent = latestSummary?.bmi;
 
+  const weekly = computeWeeklyMetrics(data.dailySummaries);
+
   const items = [
     {
       label: 'Latest weight',
-      value: `${weightCurrent.toFixed(1)} kg`,
+      value: weightCurrent > 0 ? `${weightCurrent.toFixed(1)} kg` : '—',
       delta: <Delta current={weightCurrent} previous={prevWeight?.weight_kg} unit="kg" />,
-      sub: `${weightRemaining.toFixed(1)} kg to 90 kg target · ${days} days tracked`,
+      sub: weightRemaining > 0 ? `${weightRemaining.toFixed(1)} kg above ${weightTarget} kg target · ${days} days` : `${days} days tracked`,
     },
     {
-      label: 'BMI',
-      value: bmiCurrent ? bmiCurrent.toFixed(1) : '—',
+      label: 'Body mass index',
+      value: bmiCurrent > 0 ? bmiCurrent.toFixed(1) : '—',
       delta: <Delta current={bmiCurrent ?? 0} previous={prevSummary?.bmi ?? undefined} />,
-      sub: bmiCurrent ? (bmiCurrent < 18.5 ? 'Underweight' : bmiCurrent < 25 ? 'Healthy' : bmiCurrent < 30 ? 'Overweight' : 'Obese') : '',
+      sub: bmiCurrent > 0 ? getBmiLabel(bmiCurrent) : '',
     },
     {
       label: 'Calories today',
-      value: latestSummary?.total_calories?.toString() ?? '—',
+      value: latestSummary?.total_calories > 0 ? latestSummary.total_calories.toString() : '—',
       delta: <Delta current={latestSummary?.total_calories ?? 0} previous={prevSummary?.total_calories ?? 0} />,
-      sub: latestSummary ? `${latestSummary.food_entries ?? 0} entries` : 'No summary yet',
+      sub: latestSummary ? `${latestSummary.food_entries ?? 0} food entries` : 'No summary yet',
     },
     {
       label: 'Fluids today',
-      value: latestSummary?.fluids_ml ? `${latestSummary.fluids_ml}ml` : '—',
+      value: latestSummary?.fluids_ml > 0 ? `${latestSummary.fluids_ml} ml` : '—',
       delta: <Delta current={latestSummary?.fluids_ml ?? 0} previous={prevSummary?.fluids_ml ?? 0} unit="ml" />,
-      sub: '',
+      sub: latestSummary?.fluids_ml > 0 ? 'Water, tea, coffee, other drinks' : '',
+    },
+    {
+      label: 'Weekly weight',
+      value: weekly.weight.currentAvg !== undefined ? `${weekly.weight.currentAvg.toFixed(1)} kg` : '—',
+      delta: (
+        <WeeklyDelta
+          currentAvg={weekly.weight.currentAvg}
+          priorAvg={weekly.weight.priorAvg}
+          unit="kg"
+        />
+      ),
+      sub:
+        weekly.weight.currentAvg !== undefined
+          ? `Week average vs previous week (${weekly.weight.currentDays} days)`
+          : 'Not enough weight data for a weekly average',
+    },
+    {
+      label: 'Weekly calories',
+      value: weekly.calories.currentAvg !== undefined ? `${Math.round(weekly.calories.currentAvg)} kcal` : '—',
+      delta: (
+        <WeeklyDelta
+          currentAvg={weekly.calories.currentAvg}
+          priorAvg={weekly.calories.priorAvg}
+          unit="kcal"
+        />
+      ),
+      sub:
+        weekly.calories.currentAvg !== undefined
+          ? `Week average vs previous week (${weekly.calories.currentDays} days)`
+          : 'Not enough calorie data for a weekly average',
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {items.map(({ label, value, delta, sub }) => (
         <Card key={label}>
           <CardHeader>

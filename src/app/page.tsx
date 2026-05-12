@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { useVaultData } from '@/hooks/useVaultData';
 import { KpiGrid } from '@/components/KpiGrid';
-import { WeightTrendChart, IntakeTrendChart } from '@/components/CaloriesWeightChart';
+import { WeightTrendChart, IntakeTrendChart, CombinedCaloriesWeightChart } from '@/components/CaloriesWeightChart';
 import { ReviewQueue } from '@/components/ReviewQueue';
 import { RecentEntries } from '@/components/RecentEntries';
 import { FrequentFoods } from '@/components/FrequentFoods';
@@ -63,6 +63,7 @@ export default function Home() {
   const { data, loading, error, loadFiles } = useVaultData();
   const [intakeRange, setIntakeRange] = useState<RangeValue>('30');
   const [weightRange, setWeightRange] = useState<RangeValue>('30');
+  const [combinedRange, setCombinedRange] = useState<RangeValue>('30');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const loadStatus = data
@@ -99,7 +100,7 @@ export default function Home() {
           </div>
           <div>
             <h1 className="text-sm font-semibold leading-tight">Health Vault</h1>
-            <p className="text-[11px] text-muted-foreground">Obsidian Health Dashboard</p>
+            <p className="text-[11px] text-muted-foreground">Health dashboard from your Obsidian notes</p>
           </div>
         </div>
 
@@ -153,7 +154,7 @@ export default function Home() {
                   Waiting for notes
                 </Badge>
                 <CardTitle className="text-2xl leading-tight">
-                  Your intake, weight and exercise, read straight from Obsidian.
+                  Your food, weight and exercise, read straight from Obsidian.
                 </CardTitle>
                 <p className="text-muted-foreground">
                   This dashboard parses your Markdown health notes in the browser, rolls them into daily summaries, and gives you a cleaner overview than raw vault browsing.
@@ -171,6 +172,20 @@ export default function Home() {
 
             {/* Body Composition */}
             <BodyCompositionCard summaries={data.dailySummaries} />
+
+            {/* Combined Calories + Weight Trend — full width */}
+            <Card className="flex flex-col">
+              <CardHeader className="flex flex-row items-center justify-between gap-4">
+                <div>
+                  <CardDescription>Trend</CardDescription>
+                  <CardTitle>Calories & Weight</CardTitle>
+                </div>
+                <RangeFilter value={combinedRange} onChange={setCombinedRange} />
+              </CardHeader>
+              <CardContent className="flex-1">
+                <CombinedCaloriesWeightChart summaries={data.dailySummaries} range={combinedRange} />
+              </CardContent>
+            </Card>
 
             {/* Charts — side by side, each with its own range filter */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

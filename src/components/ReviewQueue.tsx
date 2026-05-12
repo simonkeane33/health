@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AlertCircle, Check, Pencil } from 'lucide-react';
 import type { FoodEntry } from '@/lib/types';
 import { formatDateTime } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+
+const LOW_CONFIDENCE_THRESHOLD = 0.8;
 
 interface Props {
   entries: FoodEntry[];
@@ -21,8 +24,8 @@ function NoItems() {
         <AlertCircle className="w-5 h-5" />
       </div>
       <div>
-        <strong className="text-foreground block mb-0.5">Nothing in review</strong>
-        <span className="text-sm text-muted-foreground">All current entries look settled.</span>
+        <strong className="text-foreground block mb-0.5">All caught up!</strong>
+        <span className="text-sm text-muted-foreground">No entries need review right now.</span>
       </div>
     </div>
   );
@@ -47,6 +50,8 @@ function ReviewItem({
     }, 300);
   };
 
+  const isLowConfidence = Number(entry.confidence) < LOW_CONFIDENCE_THRESHOLD;
+
   return (
     <li className="flex items-start gap-3 p-3 rounded-xl bg-muted/50 border border-border">
       <div className="flex-1 min-w-0">
@@ -59,6 +64,17 @@ function ReviewItem({
         <p className="text-xs text-muted-foreground mt-0.5">
           {entry.estimated_calories} kcal · {entry.meal_type}
         </p>
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {entry.needs_review && (
+            <Badge variant="destructive">Needs review</Badge>
+          )}
+          {isLowConfidence && (
+            <Badge variant="outline" className="text-destructive border-destructive/30">Low confidence</Badge>
+          )}
+          {!entry.needs_review && !isLowConfidence && (
+            <Badge variant="secondary">Confirmed</Badge>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
         <Button
@@ -88,12 +104,16 @@ function ReviewItem({
 }
 
 export function ReviewQueue({ entries, limit = 6, onConfirm, onEdit }: Props) {
-  const reviewItems = [...entries]
-    .filter((e) => e.needs_review)
-    .sort((a, b) => new Date(b.logged_at || b.entry_date).getTime() - new Date(a.logged_at || a.entry_date).getTime())
-    .slice(0, limit);
+  const reviewItems = useMemo(() => {
+    return [...entries]
+      .filter((e) => e.needs_review || Number(e.confidence) < LOW_CONFIDENCE_THRESHOLD)
+      .sort((a, b) => new Date(b.logged_at || b.entry_date).getTime() - new Date(a.logged_at || a.entry_date).getTime())
+      .slice(0, limit);
+  }, [entries, limit]);
 
-  if (reviewItems.length === 0) {
+  const count = reviewItems.length;
+
+  if (count === 0) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -107,9 +127,12 @@ export function ReviewQueue({ entries, limit = 6, onConfirm, onEdit }: Props) {
 
   return (
     <Card>
-      <CardHeader className="pb-0">
+      <CardHeader>
         <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Review</div>
-        <CardTitle className="text-lg">Needs attention</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-lg">Needs attention</CardTitle>
+          <Badge variant="destructive">{count}</Badge>
+        </div>
       </CardHeader>
       <CardContent>
         <ul className="flex flex-col gap-2">
