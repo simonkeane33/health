@@ -159,6 +159,17 @@ function trendPhrase(fieldLabel: string, trend: TrendResult, rangeLabel: string)
   }
 }
 
+export function rollingAverage(
+  points: Array<{ value: number | null | undefined }>,
+  windowSize: number,
+): Array<number | null> {
+  return points.map((_, i) => {
+    const start = Math.max(0, i - windowSize + 1);
+    const window = points.slice(start, i + 1).map((p) => p.value).filter((v): v is number => v != null && !Number.isNaN(v));
+    return window.length > 0 ? window.reduce((a, b) => a + b, 0) / window.length : null;
+  });
+}
+
 export function buildTrendSummary(
   summaries: DailySummary[],
   range: RangeValue,

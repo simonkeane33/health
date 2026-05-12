@@ -10,7 +10,9 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  ReferenceLine,
 } from 'recharts';
+import { rollingAverage } from '@/lib/trend-utils';
 import type { DailySummary } from '@/lib/types';
 import { formatShortDate } from '@/lib/utils';
 import {
@@ -247,15 +249,22 @@ interface Props {
 
 export function WeightTrendChart({ summaries, range, height = 260 }: Props) {
   const data = useMemo(() => {
-    return filterAndSort(summaries, range)
-      .filter((s) => s.weight_kg != null)
-      .map((s) => ({
-        date: formatShortDate(s.entry_date),
-        weight: Number(s.weight_kg),
-      }));
+    const sorted = filterAndSort(summaries, range);
+    const rawPoints = sorted.map((s) => ({
+      value: s.weight_kg != null ? Number(s.weight_kg) : null,
+    }));
+    const avg7 = rollingAverage(rawPoints, 7);
+    const avg30 = rollingAverage(rawPoints, 30);
+    return sorted.map((s, i) => ({
+      date: formatShortDate(s.entry_date),
+      weight: s.weight_kg != null ? Number(s.weight_kg) : null,
+      avg7: avg7[i],
+      avg30: avg30[i],
+    }));
   }, [summaries, range]);
 
-  if (data.length === 0) {
+  const hasAnyWeight = data.some((d) => d.weight != null);
+  if (!hasAnyWeight) {
     return (
       <div className="flex items-center justify-center rounded-lg border border-dashed" style={{ height }}>
         <p className="text-sm text-muted-foreground">No weight data for selected range.</p>
@@ -263,15 +272,17 @@ export function WeightTrendChart({ summaries, range, height = 260 }: Props) {
     );
   }
 
-  // Auto-scale Y-axis with padding
-  const weights = data.map((d) => d.weight);
-  const minW = Math.min(...weights);
-  const maxW = Math.max(...weights);
+  const allVals = data.flatMap((d) => [d.weight, d.avg7, d.avg30]).filter((v): v is number => v != null);
+  const minW = Math.min(...allVals);
+  const maxW = Math.max(...allVals);
   const pad = Math.max((maxW - minW) * 0.2, 1);
   const yDomain = [Math.floor(minW - pad), Math.ceil(maxW + pad)];
 
+  const showAvg30 = range !== '7' && range !== '14';
   const weightConfig = {
     weight: { label: 'Weight (kg)', color: COLORS.weight.color },
+    avg7: { label: '7-day avg', color: '#60a5fa' },
+    avg30: { label: '30-day avg', color: '#f472b6' },
   };
 
   return (
@@ -296,15 +307,47 @@ export function WeightTrendChart({ summaries, range, height = 260 }: Props) {
             width={50}
           />
           <Tooltip content={<ChartTooltipContent />} />
+          <Legend content={<ChartLegendContent />} />
           <Line
             type="monotone"
             dataKey="weight"
             name="Weight (kg)"
             stroke={COLORS.weight.color}
-            strokeWidth={3}
+            strokeWidth={2}
+            strokeOpacity={0.5}
             fill="none"
             dot={false}
-            activeDot={{ r: 5, stroke: COLORS.weight.color, strokeWidth: 2, fill: '#000' }}
+            connectNulls={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="avg7"
+            name="7-day avg"
+            stroke="#60a5fa"
+            strokeWidth={2}
+            fill="none"
+            dot={false}
+            connectNulls
+          />
+          {showAvg30 && (
+            <Line
+              type="monotone"
+              dataKey="avg30"
+              name="30-day avg"
+              stroke="#f472b6"
+              strokeWidth={2}
+              strokeDasharray="5 3"
+              fill="none"
+              dot={false}
+              connectNulls
+            />
+          )}
+          <ReferenceLine
+            y={90}
+            stroke="#34d399"
+            strokeDasharray="4 2"
+            strokeWidth={1}
+            label={{ value: 'Target', position: 'insideTopRight', fontSize: 10, fill: '#34d399' }}
           />
         </LineChart>
       </ResponsiveContainer>
