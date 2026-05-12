@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { FolderOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -38,7 +38,8 @@ import { DataHealthCard } from '@/components/DataHealthCard';
 import { TrendInsightStrip } from '@/components/TrendInsightStrip';
 import { MealTypeChart } from '@/components/MealTypeChart';
 import { TargetsSheet } from '@/components/TargetsSheet';
-import { TargetsProvider } from '@/lib/targets-context';
+import { TargetsProvider, useTargets } from '@/lib/targets-context';
+import { DEFAULT_TARGETS } from '@/lib/targets';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 type RangeValue = '7' | '14' | '30' | '90' | '365' | 'all';
@@ -68,11 +69,27 @@ function RangeFilter({
 }
 
 export default function Home() {
+  return (
+    <TargetsProvider>
+      <HomeInner />
+    </TargetsProvider>
+  );
+}
+
+function HomeInner() {
   const { data, loading, error, loadFiles } = useVaultData();
+  const { setTargets } = useTargets();
   const [intakeRange, setIntakeRange] = useState<RangeValue>('30');
   const [weightRange, setWeightRange] = useState<RangeValue>('30');
   const [combinedRange, setCombinedRange] = useState<RangeValue>('30');
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync vault-parsed targets into context whenever data loads
+  useEffect(() => {
+    if (data?.vaultTargets) {
+      setTargets({ ...DEFAULT_TARGETS, ...data.vaultTargets });
+    }
+  }, [data?.vaultTargets, setTargets]);
 
   const loadStatus = data
     ? `${data.foodEntries.length} food · ${data.weightEntries.length} weight · ${data.exerciseEntries.length} exercise · ${data.dailySummaries.length} days`
@@ -95,7 +112,6 @@ export default function Home() {
   }
 
   return (
-    <TargetsProvider>
     <div className="min-h-svh bg-background">
       {/* Page header — vault controls + theme */}
       <header className="border-b px-4 lg:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
@@ -274,6 +290,5 @@ export default function Home() {
         )}
       </main>
     </div>
-    </TargetsProvider>
   );
 }

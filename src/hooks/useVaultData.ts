@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { parseVaultFile } from '@/lib/parser';
+import { parseVaultFile, extractFrontmatter, parseTargetsConfig } from '@/lib/parser';
+import type { DailyTargets } from '@/lib/targets';
 import { aggregateDailySummaries } from '@/lib/aggregator';
 import type { FoodEntry, WeightEntry, DailySummary, ExerciseEntry } from '@/lib/schemas';
 import type { VaultData } from '@/lib/types';
@@ -31,9 +32,19 @@ export function useVaultData() {
       const weightEntries: WeightEntry[] = [];
       const dailySummaries: DailySummary[] = [];
       const exerciseEntries: ExerciseEntry[] = [];
+      let vaultTargets: Partial<DailyTargets> | undefined;
 
       for (const file of mdFiles) {
         const text = await file.text();
+
+        // Handle config files (e.g. targets.md) before the main parser
+        const fm = extractFrontmatter(text);
+        if (fm?.entry_type === 'config') {
+          const parsed = parseTargetsConfig(text);
+          if (parsed) vaultTargets = { ...vaultTargets, ...parsed };
+          continue;
+        }
+
         const relativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
         const entry = parseVaultFile(relativePath, text);
         if (!entry) continue;
@@ -59,6 +70,7 @@ export function useVaultData() {
         dailySummaries: mergedSummaries,
         exerciseEntries,
         allEntries: [...foodEntries, ...weightEntries, ...mergedSummaries, ...exerciseEntries],
+        vaultTargets,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load vault files');

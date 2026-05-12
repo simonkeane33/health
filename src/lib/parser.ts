@@ -1,6 +1,7 @@
 import * as yaml from 'js-yaml';
 import { FoodEntrySchema, WeightEntrySchema, DailySummarySchema, ExerciseEntrySchema } from './schemas';
 import type { FoodEntry, WeightEntry, DailySummary, ExerciseEntry, VaultEntry } from './schemas';
+import type { DailyTargets } from './targets';
 
 /* ------------------------------------------------------------------ */
 /* Front-matter extraction                                              */
@@ -159,6 +160,49 @@ export function extractAttachmentsFromBody(text: string): string[] {
   }
 
   return attachments;
+}
+
+/* ------------------------------------------------------------------ */
+/* Config / targets parsing                                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Parse daily targets from a vault config file whose frontmatter has
+ * entry_type: config (e.g. Config/targets.md).
+ *
+ * Extracts values from the "## Active Targets" markdown table using
+ * patterns like: | **Calories** | **1,974 kcal** |
+ */
+export function parseTargetsConfig(text: string): Partial<DailyTargets> | null {
+  const frontmatter = extractFrontmatter(text);
+  if (frontmatter?.entry_type !== 'config') return null;
+
+  const result: Partial<DailyTargets> = {};
+
+  function extractNum(pattern: RegExp): number | undefined {
+    const m = text.match(pattern);
+    if (!m) return undefined;
+    const n = parseFloat(m[1].replace(/,/g, ''));
+    return Number.isNaN(n) ? undefined : n;
+  }
+
+  // | **Calories** | **1,974 kcal** |
+  const cal = extractNum(/\|\s*\*{1,2}Calories\*{1,2}\s*\|\s*\*{1,2}([\d,]+)\s*kcal\*{1,2}/i);
+  if (cal != null) result.calories_kcal = cal;
+
+  // | **Protein** | **150 g** |
+  const protein = extractNum(/\|\s*\*{1,2}Protein\*{1,2}\s*\|\s*\*{1,2}([\d,]+)\s*g\*{1,2}/i);
+  if (protein != null) result.protein_g = protein;
+
+  // | **Fluids (water)** | **2,500 ml** | — also matches plain "Fluids"
+  const fluids = extractNum(/\|\s*\*{1,2}Fluids[^|]*\|\s*\*{1,2}([\d,]+)\s*ml\*{1,2}/i);
+  if (fluids != null) result.fluids_ml = fluids;
+
+  // Optional: | **Weight target** | **90 kg** | (not in current file but future-safe)
+  const weight = extractNum(/\|\s*\*{1,2}Weight\s*target\*{1,2}\s*\|\s*\*{1,2}([\d.]+)\s*kg\*{1,2}/i);
+  if (weight != null) result.weight_kg = weight;
+
+  return Object.keys(result).length > 0 ? result : null;
 }
 
 /* ------------------------------------------------------------------ */

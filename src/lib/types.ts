@@ -108,4 +108,6 @@ export interface VaultData {
   exerciseEntries: ExerciseEntry[];
   allEntries: VaultEntry[];
   imageMap?: Record<string, string>;
+  /** Targets parsed from a Config/targets.md in the vault, if present */
+  vaultTargets?: Partial<import('./targets').DailyTargets>;
 }

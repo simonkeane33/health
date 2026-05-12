@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { parseVaultFile, parseVaultEntry, extractFrontmatter } from '@/lib/parser';
+import { parseVaultFile, parseVaultEntry, extractFrontmatter, parseTargetsConfig } from '@/lib/parser';
 
 const sampleDailySummary = `---
 entry_type: daily_summary
@@ -313,5 +313,49 @@ items:
     if (entry && entry.entry_type === 'weight_entry') {
       expect(entry.weight_kg).toBe(80);
     }
+  });
+});
+
+describe('parseTargetsConfig', () => {
+  const sampleTargetsFile = `---
+id: health-targets
+entry_type: config
+created: 2026-05-11
+source: hermes
+---
+
+## Active Targets
+
+| Metric | Daily Target | Rationale |
+|--------|-----------|-----------|
+| **Calories** | **1,974 kcal** | TDEE lightly active at -500 kcal deficit |
+| **Protein** | **150 g** | 1.6 g/kg body weight |
+| **Fat** | **65 g** | ~30% of calories |
+| **Fluids (water)** | **2,500 ml** | Active hydration goal |
+`;
+
+  it('extracts calories, protein, and fluids from active targets table', () => {
+    const targets = parseTargetsConfig(sampleTargetsFile);
+    expect(targets).not.toBeNull();
+    expect(targets?.calories_kcal).toBe(1974);
+    expect(targets?.protein_g).toBe(150);
+    expect(targets?.fluids_ml).toBe(2500);
+  });
+
+  it('returns null for non-config entry_type', () => {
+    const text = `---\nentry_type: food_entry\nid: x\n---\n| **Calories** | **2000 kcal** |\n`;
+    expect(parseTargetsConfig(text)).toBeNull();
+  });
+
+  it('returns null when no target values found', () => {
+    const text = `---\nentry_type: config\nid: health-targets\n---\n# No table here\n`;
+    expect(parseTargetsConfig(text)).toBeNull();
+  });
+
+  it('handles optional weight target row', () => {
+    const text = `---\nentry_type: config\nid: health-targets\n---\n| **Weight target** | **90 kg** |\n| **Calories** | **1,800 kcal** |\n`;
+    const targets = parseTargetsConfig(text);
+    expect(targets?.weight_kg).toBe(90);
+    expect(targets?.calories_kcal).toBe(1800);
   });
 });
