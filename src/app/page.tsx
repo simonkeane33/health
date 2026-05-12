@@ -77,7 +77,7 @@ export default function Home() {
 }
 
 function HomeInner() {
-  const { data, loading, error, progress, supportsDirectoryPicker, openDirectoryPicker, loadFiles, clearData } = useVaultData();
+  const { data, loading, error, progress, supportsDirectoryPicker, savedVaultName, reconnectNeeded, reconnect, openDirectoryPicker, loadFiles, clearData } = useVaultData();
   const { setTargets } = useTargets();
   const [intakeRange, setIntakeRange] = useState<RangeValue>('30');
   const [weightRange, setWeightRange] = useState<RangeValue>('30');
@@ -141,19 +141,36 @@ function HomeInner() {
             webkitdirectory=""
             directory=""
           />
-          <Button
-            type="button"
-            size="sm"
-            disabled={loading}
-            onClick={() => supportsDirectoryPicker ? openDirectoryPicker() : inputRef.current?.click()}
-          >
-            <FolderOpen className="mr-1 h-4 w-4" />
-            {loading ? 'Loading…' : 'Select folder'}
-          </Button>
+
+          {reconnectNeeded ? (
+            /* Permission lapsed after browser restart — one click to restore */
+            <Button type="button" size="sm" onClick={reconnect} disabled={loading}>
+              <FolderOpen className="mr-1 h-4 w-4" />
+              Reconnect "{savedVaultName}"
+            </Button>
+          ) : !data && !loading ? (
+            /* No vault loaded yet — show folder picker */
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => supportsDirectoryPicker ? openDirectoryPicker() : inputRef.current?.click()}
+            >
+              <FolderOpen className="mr-1 h-4 w-4" />
+              Select folder
+            </Button>
+          ) : null}
 
           {data && !loading && (
-            <Button type="button" size="sm" variant="outline" onClick={clearData}>
-              Clear
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="text-muted-foreground hover:text-foreground"
+              onClick={clearData}
+              title="Disconnect vault"
+            >
+              <FolderOpen className="mr-1 h-4 w-4" />
+              {savedVaultName ?? 'Vault'} ✕
             </Button>
           )}
 
@@ -201,27 +218,32 @@ function HomeInner() {
 
       {/* Main content */}
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
-        {!data ? (
+        {!data && !loading && (
           <Card>
             <CardContent className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr] items-end gap-6 p-6">
               <div className="space-y-4">
                 <Badge variant="secondary">
                   <span className="mr-1 inline-block h-2 w-2 rounded-full bg-primary" />
-                  Waiting for notes
+                  {reconnectNeeded ? 'Vault disconnected' : 'Waiting for notes'}
                 </Badge>
                 <CardTitle className="text-2xl leading-tight">
                   Your food, weight and exercise, read straight from Obsidian.
                 </CardTitle>
                 <p className="text-muted-foreground">
-                  This dashboard parses your Markdown health notes in the browser, rolls them into daily summaries, and gives you a cleaner overview than raw vault browsing.
+                  {reconnectNeeded
+                    ? `Click "Reconnect \\"${savedVaultName}\\"" above to restore access — no folder picking needed.`
+                    : 'This dashboard parses your Markdown health notes in the browser, rolls them into daily summaries, and gives you a cleaner overview than raw vault browsing.'}
                 </p>
               </div>
               <div className="text-xs text-muted-foreground self-center">
-                Pick your Health folder to get started.
+                {reconnectNeeded
+                  ? 'Permission resets when the browser restarts. One click to restore.'
+                  : 'Pick your Health folder to get started. Your choice is remembered.'}
               </div>
             </CardContent>
           </Card>
-        ) : (
+        )}
+        {data && (
           <>
             {/* KPIs */}
             <KpiGrid data={data} />

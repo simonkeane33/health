@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { parseVaultFile, extractFrontmatter, parseTargetsConfig } from '@/lib/parser';
 import type { DailyTargets } from '@/lib/targets';
 import { aggregateDailySummaries } from '@/lib/aggregator';
 import type { FoodEntry, WeightEntry, DailySummary, ExerciseEntry } from '@/lib/schemas';
 import type { VaultData } from '@/lib/types';
+import { saveVaultHandle, loadVaultHandle, clearVaultHandle } from '@/lib/vault-store';
 
 export type { VaultData };
 
@@ -111,27 +112,30 @@ export function useVaultData() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<LoadProgress | null>(null);
+  /** Name of the last-used vault folder, shown in the reconnect prompt */
+  const [savedVaultName, setSavedVaultName] = useState<string | null>(null);
+  /** 'needs-reconnect' = handle exists but permission needs a user gesture */
+  const [reconnectNeeded, setReconnectNeeded] = useState(false);
+  const savedHandleRef = useRef<FileSystemDirectoryHandle | null>(null);
 
-  /** Whether the File System Access API is available (Chrome / Edge) */
   const supportsDirectoryPicker =
     typeof window !== 'undefined' && 'showDirectoryPicker' in window;
 
-  /** Open a native OS folder picker — no scary "upload X files" dialog */
-  const openDirectoryPicker = useCallback(async () => {
-    if (!('showDirectoryPicker' in window)) return;
+  /* ── Core: load from a directory handle ── */
+  const loadFromHandle = useCallback(async (dirHandle: FileSystemDirectoryHandle) => {
     setLoading(true);
     setError(null);
     setProgress(null);
+    setReconnectNeeded(false);
 
     try {
-      // @ts-expect-error — showDirectoryPicker is in the spec but may lag in TS types
-      const dirHandle: FileSystemDirectoryHandle = await window.showDirectoryPicker({ mode: 'read' });
-
-      // Collect all .md handles first so we know the total
       setProgress({ processed: 0, total: 0, phase: 'reading' });
       const sources: FileSource = [];
       for await (const item of walkDirectory(dirHandle)) {
-        sources.push({ relativePath: item.relativePath, getText: async () => (await item.getFile()).text() });
+        sources.push({
+          relativePath: item.relativePath,
+          getText: async () => (await item.getFile()).text(),
+        });
         if (sources.length % 100 === 0) {
           setProgress({ processed: 0, total: sources.length, phase: 'reading' });
           await new Promise<void>((r) => setTimeout(r, 0));
@@ -141,10 +145,6 @@ export function useVaultData() {
       const result = await parseFileSources(sources, setProgress);
       setData(result);
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        // User dismissed the picker — not an error
-        return;
-      }
       setError(err instanceof Error ? err.message : 'Failed to read vault directory');
     } finally {
       setLoading(false);
@@ -152,7 +152,65 @@ export function useVaultData() {
     }
   }, []);
 
-  /** Fallback: accept a FileList from a <input type="file"> */
+  /* ── On mount: restore saved handle and auto-load if permission held ── */
+  useEffect(() => {
+    if (!supportsDirectoryPicker) return;
+
+    loadVaultHandle().then(async (handle) => {
+      if (!handle) return;
+      savedHandleRef.current = handle;
+      setSavedVaultName(handle.name);
+
+      // @ts-expect-error — queryPermission is in the WICG spec
+      const perm = await handle.queryPermission({ mode: 'read' });
+      if (perm === 'granted') {
+        // Permission still held from this session — load silently
+        await loadFromHandle(handle);
+      } else {
+        // Permission lapsed (e.g. browser restarted) — need a user gesture
+        setReconnectNeeded(true);
+      }
+    }).catch(() => { /* IndexedDB unavailable — no-op */ });
+  }, [supportsDirectoryPicker, loadFromHandle]);
+
+  /* ── Reconnect: re-request permission for the saved handle ── */
+  const reconnect = useCallback(async () => {
+    const handle = savedHandleRef.current;
+    if (!handle) return;
+
+    try {
+      // @ts-expect-error — requestPermission is in the WICG spec
+      const perm = await handle.requestPermission({ mode: 'read' });
+      if (perm === 'granted') {
+        await loadFromHandle(handle);
+      } else {
+        setReconnectNeeded(true);
+      }
+    } catch {
+      setReconnectNeeded(true);
+    }
+  }, [loadFromHandle]);
+
+  /* ── Open folder picker and save the chosen handle ── */
+  const openDirectoryPicker = useCallback(async () => {
+    if (!('showDirectoryPicker' in window)) return;
+    setError(null);
+
+    try {
+      // @ts-expect-error — showDirectoryPicker may lag in TS types
+      const dirHandle: FileSystemDirectoryHandle = await window.showDirectoryPicker({ mode: 'read' });
+      savedHandleRef.current = dirHandle;
+      setSavedVaultName(dirHandle.name);
+      setReconnectNeeded(false);
+      await saveVaultHandle(dirHandle);
+      await loadFromHandle(dirHandle);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      setError(err instanceof Error ? err.message : 'Failed to read vault directory');
+    }
+  }, [loadFromHandle]);
+
+  /* ── Fallback: accept a FileList from <input type="file"> ── */
   const loadFiles = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) {
       setData(null);
@@ -181,7 +239,13 @@ export function useVaultData() {
     }
   }, []);
 
-  const clearData = useCallback(() => setData(null), []);
+  const clearData = useCallback(async () => {
+    setData(null);
+    setReconnectNeeded(false);
+    setSavedVaultName(null);
+    savedHandleRef.current = null;
+    await clearVaultHandle();
+  }, []);
 
   return {
     data,
@@ -189,6 +253,9 @@ export function useVaultData() {
     error,
     progress,
     supportsDirectoryPicker,
+    savedVaultName,
+    reconnectNeeded,
+    reconnect,
     openDirectoryPicker,
     loadFiles,
     clearData,
