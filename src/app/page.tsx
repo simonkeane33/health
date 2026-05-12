@@ -33,7 +33,6 @@ import { ExerciseCard } from '@/components/ExerciseCard';
 import { BodyCompositionCard } from '@/components/BodyCompositionCard';
 import { DailyMacroCard } from '@/components/DailyMacroCard';
 import { WeeklyMacroChart } from '@/components/WeeklyMacroChart';
-import { DataHealthCard } from '@/components/DataHealthCard';
 import { WeeklyAdherenceCard } from '@/components/WeeklyAdherenceCard';
 import { TargetsSheet } from '@/components/TargetsSheet';
 import { TargetsProvider } from '@/lib/targets-context';
@@ -177,9 +176,6 @@ export default function Home() {
           <>
             {/* KPIs */}
             <KpiGrid data={data} />
-
-            {/* Data health */}
-            <DataHealthCard data={data} />
 
             {/* Weekly adherence */}
             <WeeklyAdherenceCard summaries={data.dailySummaries} />

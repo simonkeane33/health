@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import type { DailySummary } from '@/lib/types';
 import { formatDate, formatNumber } from '@/lib/utils';
 import { CalendarDays, ChevronDown, ChevronRight } from 'lucide-react';
@@ -143,9 +143,9 @@ export function DailySummaries({ entries }: Props) {
               const isExpanded = expandedId === day.id;
               const hasDetail = day.protein_g != null || day.fluids_ml != null || day.food_entries != null;
               return (
-                <>
+                <React.Fragment key={day.id}>
                   <tr
-                    key={day.id}
+                    key={`${day.id}-main`}
                     onClick={() => hasDetail && toggleRow(day.id)}
                     className={`transition-colors ${hasDetail ? 'cursor-pointer hover:bg-muted/50' : ''}`}
                   >
@@ -190,7 +190,7 @@ export function DailySummaries({ entries }: Props) {
                     )}
                   </tr>
                   {isExpanded && <DetailRow key={`${day.id}-detail`} day={day} />}
-                </>
+                </React.Fragment>
               );
             })}
           </tbody>
