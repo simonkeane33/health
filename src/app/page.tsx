@@ -77,7 +77,7 @@ export default function Home() {
 }
 
 function HomeInner() {
-  const { data, loading, error, loadFiles } = useVaultData();
+  const { data, loading, error, progress, supportsDirectoryPicker, openDirectoryPicker, loadFiles, clearData } = useVaultData();
   const { setTargets } = useTargets();
   const [intakeRange, setIntakeRange] = useState<RangeValue>('30');
   const [weightRange, setWeightRange] = useState<RangeValue>('30');
@@ -94,14 +94,6 @@ function HomeInner() {
   const loadStatus = data
     ? `${data.foodEntries.length} food · ${data.weightEntries.length} weight · ${data.exerciseEntries.length} exercise · ${data.dailySummaries.length} days`
     : 'No notes loaded yet.';
-
-  if (loading) {
-    return (
-      <div className="min-h-svh flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Loading vault data...</p>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -130,13 +122,14 @@ function HomeInner() {
         </div>
 
         <div className="flex items-center gap-2">
-          {data && (
+          {data && !loading && (
             <Badge variant="secondary" className="hidden sm:inline-flex">
               <span className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-500" />
               Vault paired
             </Badge>
           )}
 
+          {/* Hidden fallback input for browsers without showDirectoryPicker */}
           <input
             ref={inputRef}
             type="file"
@@ -148,18 +141,18 @@ function HomeInner() {
             webkitdirectory=""
             directory=""
           />
-          <Button type="button" size="sm" onClick={() => inputRef.current?.click()}>
+          <Button
+            type="button"
+            size="sm"
+            disabled={loading}
+            onClick={() => supportsDirectoryPicker ? openDirectoryPicker() : inputRef.current?.click()}
+          >
             <FolderOpen className="mr-1 h-4 w-4" />
-            Select folder
+            {loading ? 'Loading…' : 'Select folder'}
           </Button>
 
-          {data && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => loadFiles(null)}
-            >
+          {data && !loading && (
+            <Button type="button" size="sm" variant="outline" onClick={clearData}>
               Clear
             </Button>
           )}
@@ -168,6 +161,43 @@ function HomeInner() {
           <ThemeToggle className="h-8 w-8 rounded-lg border" size="sm" />
         </div>
       </header>
+
+      {/* Loading overlay */}
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-5 rounded-2xl border border-border bg-card p-8 shadow-xl w-80">
+            {/* Spinner */}
+            <div className="relative h-12 w-12">
+              <div className="absolute inset-0 rounded-full border-4 border-muted" />
+              <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+            </div>
+
+            {progress ? (
+              <>
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-medium">
+                    {progress.phase === 'reading' ? 'Reading vault…' : 'Parsing notes…'}
+                  </p>
+                  <p className="text-xs text-muted-foreground tabular-nums">
+                    {progress.processed.toLocaleString()}
+                    {progress.total > 0 && ` / ${progress.total.toLocaleString()}`} files
+                  </p>
+                </div>
+                {progress.total > 0 && (
+                  <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-150"
+                      style={{ width: `${Math.round((progress.processed / progress.total) * 100)}%` }}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Reading vault…</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
