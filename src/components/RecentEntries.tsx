@@ -97,7 +97,7 @@ export function RecentEntries({ entries, onReviewChange }: Props) {
   return (
     <Card>
       {header}
-      <CardContent className="overflow-auto">
+      <CardContent className="overflow-x-auto -mx-0.5 px-0.5">
         {displayed.length === 0 && showLowConfidence ? (
           <EmptyState
             icon={AlertTriangle}
@@ -105,14 +105,14 @@ export function RecentEntries({ entries, onReviewChange }: Props) {
             body="No low-confidence entries today. Every item is above the 0.8 threshold."
           />
         ) : (
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full min-w-[540px] text-sm border-collapse">
             <thead>
               <tr>
                 <th className="text-left text-[11px] uppercase tracking-wider text-muted-foreground font-medium py-2.5 px-2 border-b border-border">When</th>
-                <th className="text-left text-[11px] uppercase tracking-wider text-muted-foreground font-medium py-2.5 px-2 border-b border-border">Type</th>
+                <th className="hidden sm:table-cell text-left text-[11px] uppercase tracking-wider text-muted-foreground font-medium py-2.5 px-2 border-b border-border">Type</th>
                 <th className="text-left text-[11px] uppercase tracking-wider text-muted-foreground font-medium py-2.5 px-2 border-b border-border">Items</th>
                 <th className="text-left text-[11px] uppercase tracking-wider text-muted-foreground font-medium py-2.5 px-2 border-b border-border">Energy</th>
-                <th className="text-left text-[11px] uppercase tracking-wider text-muted-foreground font-medium py-2.5 px-2 border-b border-border">Status</th>
+                <th className="hidden sm:table-cell text-left text-[11px] uppercase tracking-wider text-muted-foreground font-medium py-2.5 px-2 border-b border-border">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -125,17 +125,17 @@ export function RecentEntries({ entries, onReviewChange }: Props) {
                   <td className="py-3 px-2 border-b border-border whitespace-nowrap">
                     {formatDateTime(entry.logged_at || entry.entry_date)}
                   </td>
-                  <td className="py-3 px-2 border-b border-border">
+                  <td className="hidden sm:table-cell py-3 px-2 border-b border-border">
                     {entry.meal_type || '—'}
                   </td>
-                  <td className="py-3 px-2 border-b border-border">
+                  <td className="py-3 px-2 border-b border-border max-w-[200px] truncate">
                     {entry.items.join(', ')}
                   </td>
-                  <td className="py-3 px-2 border-b border-border">
+                  <td className="py-3 px-2 border-b border-border whitespace-nowrap">
                     <strong className="tabular-nums">{formatNumber(entry.estimated_calories || 0, 0)}</strong>{' '}
                     <span className="text-muted-foreground">kcal</span>
                   </td>
-                  <td className="py-3 px-2 border-b border-border">
+                  <td className="hidden sm:table-cell py-3 px-2 border-b border-border">
                     {entry.needs_review ? (
                       <Badge variant="destructive">Needs review</Badge>
                     ) : Number(entry.confidence) < LOW_CONFIDENCE_THRESHOLD ? (

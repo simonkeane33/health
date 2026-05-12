@@ -121,8 +121,8 @@ export function DailySummaries({ entries }: Props) {
           ))}
         </div>
       </CardHeader>
-      <CardContent className="overflow-auto pt-3">
-        <table className="w-full text-sm border-collapse">
+      <CardContent className="overflow-x-auto pt-3 -mx-0.5 px-0.5">
+        <table className="w-full min-w-[400px] text-sm border-collapse">
           <thead>
             <tr>
               <th className="w-5 border-b border-border" />
