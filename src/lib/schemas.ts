@@ -81,6 +81,11 @@ export const FoodEntrySchema = z.object({
   location: optionalString(),
   mood: optionalString(),
   notes: optionalString(),
+  hermes_confidence: optionalNumber(),
+  reviewed_by: optionalString(),
+  reviewed_at: optionalString(),
+  tags: z.array(z.string()).optional(),
+  attachments: z.array(z.string()).optional(),
 });
 
 export const WeightEntrySchema = z.object({

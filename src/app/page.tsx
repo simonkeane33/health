@@ -31,6 +31,9 @@ import { HighestCalorieItems } from '@/components/HighestCalorieItems';
 import { DailySummaries } from '@/components/DailySummaries';
 import { ExerciseCard } from '@/components/ExerciseCard';
 import { BodyCompositionCard } from '@/components/BodyCompositionCard';
+import { DailyMacroCard } from '@/components/DailyMacroCard';
+import { WeeklyMacroChart } from '@/components/WeeklyMacroChart';
+import { DataHealthCard } from '@/components/DataHealthCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 type RangeValue = '7' | '14' | '30' | '90' | '365' | 'all';
@@ -170,6 +173,9 @@ export default function Home() {
             {/* KPIs */}
             <KpiGrid data={data} />
 
+            {/* Data health */}
+            <DataHealthCard data={data} />
+
             {/* Body Composition */}
             <BodyCompositionCard summaries={data.dailySummaries} />
 
@@ -225,10 +231,14 @@ export default function Home() {
               <DailySummaries entries={data.dailySummaries} />
             </div>
 
-            {/* Bottom row — Review, patterns, rankings */}
+            {/* Weekly macro breakdown — full width */}
+            <WeeklyMacroChart summaries={data.dailySummaries} />
+
+            {/* Bottom row — Review, patterns, rankings, macros */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-4">
                 <ReviewQueue entries={data.foodEntries} />
+                <DailyMacroCard summary={data.dailySummaries[0]} />
                 <FoodVsDrinkCard entries={data.foodEntries} />
                 <FrequentFoods entries={data.foodEntries} />
               </div>

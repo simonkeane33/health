@@ -100,21 +100,21 @@ export function KpiGrid({ data }: { data?: VaultData | null }) {
     },
     {
       label: 'Body mass index',
-      value: bmiCurrent > 0 ? bmiCurrent.toFixed(1) : '—',
-      delta: <Delta current={bmiCurrent ?? 0} previous={prevSummary?.bmi ?? undefined} />,
-      sub: bmiCurrent > 0 ? getBmiLabel(bmiCurrent) : '',
+      value: (bmiCurrent ?? 0) > 0 ? (bmiCurrent as number).toFixed(1) : '—',
+      delta: <Delta current={bmiCurrent ?? 0} previous={prevSummary?.bmi} />,
+      sub: (bmiCurrent ?? 0) > 0 ? getBmiLabel(bmiCurrent as number) : '',
     },
     {
       label: 'Calories today',
-      value: latestSummary?.total_calories > 0 ? latestSummary.total_calories.toString() : '—',
+      value: (latestSummary?.total_calories ?? 0) > 0 ? String(latestSummary!.total_calories) : '—',
       delta: <Delta current={latestSummary?.total_calories ?? 0} previous={prevSummary?.total_calories ?? 0} />,
       sub: latestSummary ? `${latestSummary.food_entries ?? 0} food entries` : 'No summary yet',
     },
     {
       label: 'Fluids today',
-      value: latestSummary?.fluids_ml > 0 ? `${latestSummary.fluids_ml} ml` : '—',
+      value: (latestSummary?.fluids_ml ?? 0) > 0 ? `${latestSummary!.fluids_ml} ml` : '—',
       delta: <Delta current={latestSummary?.fluids_ml ?? 0} previous={prevSummary?.fluids_ml ?? 0} unit="ml" />,
-      sub: latestSummary?.fluids_ml > 0 ? 'Water, tea, coffee, other drinks' : '',
+      sub: (latestSummary?.fluids_ml ?? 0) > 0 ? 'Water, tea, coffee, other drinks' : '',
     },
     {
       label: 'Weekly weight',

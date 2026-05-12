@@ -107,7 +107,7 @@ export function WeeklyMacroChart({ summaries, height = 260 }: Props) {
 
   const data = useMemo(() => {
     const points = prepareWeeklyMacros(summaries, Number(range));
-    return points.map((p) => ({
+    return points.map((p: { date: string; protein_g: number; carbs_g: number; fat_g: number; protein_pct: number; carbs_pct: number; fat_pct: number }) => ({
       date: p.date,
       protein: view === 'grams' ? p.protein_g : p.protein_pct,
       carbs: view === 'grams' ? p.carbs_g : p.carbs_pct,

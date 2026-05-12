@@ -179,3 +179,56 @@ function normalizeToDailySummary(day: AggregatedDay): DailySummary {
     source: 'computed',
   };
 }
+
+export function computeMacroPercentages(summary: DailySummary): {
+  protein_pct: number;
+  carbs_pct: number;
+  fat_pct: number;
+} {
+  const protein = (summary.protein_g ?? 0) * 4;
+  const carbs = (summary.carbs_g ?? 0) * 4;
+  const fat = (summary.fat_g ?? 0) * 9;
+  const total = protein + carbs + fat;
+  if (total === 0) return { protein_pct: 0, carbs_pct: 0, fat_pct: 0 };
+  return {
+    protein_pct: Math.round((protein / total) * 100),
+    carbs_pct: Math.round((carbs / total) * 100),
+    fat_pct: Math.round((fat / total) * 100),
+  };
+}
+
+export interface WeeklyMacroPoint {
+  date: string;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  protein_pct: number;
+  carbs_pct: number;
+  fat_pct: number;
+}
+
+export function prepareWeeklyMacros(
+  summaries: DailySummary[],
+  days: number,
+): WeeklyMacroPoint[] {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  return [...summaries]
+    .filter((s) => new Date(s.entry_date + 'T00:00:00') >= cutoff)
+    .sort((a, b) => a.entry_date.localeCompare(b.entry_date))
+    .map((s) => {
+      const protein_g = s.protein_g ?? 0;
+      const carbs_g = s.carbs_g ?? 0;
+      const fat_g = s.fat_g ?? 0;
+      const cals = protein_g * 4 + carbs_g * 4 + fat_g * 9;
+      return {
+        date: s.entry_date.slice(5),
+        protein_g,
+        carbs_g,
+        fat_g,
+        protein_pct: cals > 0 ? Math.round((protein_g * 4 / cals) * 100) : 0,
+        carbs_pct: cals > 0 ? Math.round((carbs_g * 4 / cals) * 100) : 0,
+        fat_pct: cals > 0 ? Math.round((fat_g * 9 / cals) * 100) : 0,
+      };
+    });
+}

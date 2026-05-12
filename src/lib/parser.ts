@@ -121,6 +121,10 @@ export function parseVaultEntry(data: Record<string, unknown>): VaultEntry | nul
   if (entryType === 'weight_entry') return parseWeightEntry(data);
   if (entryType === 'daily_summary') return parseDailySummary(data);
   if (entryType === 'exercise_entry') return parseExerciseEntry(data);
+  console.warn('[parseVaultEntry] Unknown entry_type:', entryType);
+  return null;
+}
+
 /* ------------------------------------------------------------------ */
 /* Attachment extraction from Markdown body                            */
 /* ------------------------------------------------------------------ */

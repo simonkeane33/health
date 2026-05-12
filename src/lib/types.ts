@@ -44,6 +44,10 @@ export interface FoodEntry {
   location?: string;
   mood?: string;
   notes?: string;
+  hermes_confidence?: number;
+  reviewed_by?: string;
+  reviewed_at?: string;
+  tags?: string[];
 }
 
 export interface DailySummary {
@@ -102,5 +106,5 @@ export interface VaultData {
   dailySummaries: DailySummary[];
   exerciseEntries: ExerciseEntry[];
   allEntries: VaultEntry[];
-  imageMap: Record<string, string>;
+  imageMap?: Record<string, string>;
 }
