@@ -171,12 +171,14 @@ export function parseVaultFile(name: string, text: string): VaultEntry | null {
   const entry = parseVaultEntry(frontmatter);
   if (!entry) return null;
 
-  // For food entries, scan body for image attachments
-  if (entry.entry_type === 'food_entry' && entry) {
+  // For food entries, stamp source_file and scan body for image attachments
+  if (entry.entry_type === 'food_entry') {
     const attachments = extractAttachmentsFromBody(text);
-    if (attachments.length > 0) {
-      return { ...entry, attachments } as VaultEntry;
-    }
+    return {
+      ...entry,
+      source_file: name,
+      ...(attachments.length > 0 ? { attachments } : {}),
+    } as VaultEntry;
   }
 
   return entry;

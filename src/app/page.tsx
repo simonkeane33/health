@@ -34,6 +34,9 @@ import { BodyCompositionCard } from '@/components/BodyCompositionCard';
 import { DailyMacroCard } from '@/components/DailyMacroCard';
 import { WeeklyMacroChart } from '@/components/WeeklyMacroChart';
 import { WeeklyAdherenceCard } from '@/components/WeeklyAdherenceCard';
+import { DataHealthCard } from '@/components/DataHealthCard';
+import { TrendInsightStrip } from '@/components/TrendInsightStrip';
+import { MealTypeChart } from '@/components/MealTypeChart';
 import { TargetsSheet } from '@/components/TargetsSheet';
 import { TargetsProvider } from '@/lib/targets-context';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -177,8 +180,14 @@ export default function Home() {
             {/* KPIs */}
             <KpiGrid data={data} />
 
+            {/* Trend insight strip */}
+            <TrendInsightStrip summaries={data.dailySummaries} range={combinedRange} />
+
             {/* Weekly adherence */}
             <WeeklyAdherenceCard summaries={data.dailySummaries} />
+
+            {/* Data health — collapsible, auto-opens on errors */}
+            <DataHealthCard data={data} />
 
             {/* Body Composition */}
             <BodyCompositionCard summaries={data.dailySummaries} />
@@ -235,8 +244,11 @@ export default function Home() {
               <DailySummaries entries={data.dailySummaries} />
             </div>
 
-            {/* Weekly macro breakdown — full width */}
-            <WeeklyMacroChart summaries={data.dailySummaries} />
+            {/* Macro + meal-type breakdown — side by side */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <WeeklyMacroChart summaries={data.dailySummaries} />
+              <MealTypeChart entries={data.foodEntries} />
+            </div>
 
             {/* Bottom row — Review, patterns, rankings, macros */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

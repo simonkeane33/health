@@ -34,7 +34,8 @@ export function useVaultData() {
 
       for (const file of mdFiles) {
         const text = await file.text();
-        const entry = parseVaultFile(file.name, text);
+        const relativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+        const entry = parseVaultFile(relativePath, text);
         if (!entry) continue;
 
         if (entry.entry_type === 'food_entry') foodEntries.push(entry);

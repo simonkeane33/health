@@ -54,19 +54,24 @@ function TargetField({
 }
 
 export function TargetsSheet({ className }: { className?: string }) {
-  const { targets, setTargets } = useTargets();
+  const { targets, setTargets, vaultName, setVaultName } = useTargets();
   const [draft, setDraft] = useState<DailyTargets>(targets);
+  const [draftVault, setDraftVault] = useState(vaultName);
 
   function field<K extends keyof DailyTargets>(key: K) {
     return (v: number) => setDraft((d) => ({ ...d, [key]: v }));
   }
 
   function handleOpen(open: boolean) {
-    if (open) setDraft(targets);
+    if (open) {
+      setDraft(targets);
+      setDraftVault(vaultName);
+    }
   }
 
   function handleApply() {
     setTargets(draft);
+    setVaultName(draftVault.trim());
   }
 
   function handleReset() {
@@ -90,6 +95,20 @@ export function TargetsSheet({ className }: { className?: string }) {
         </SheetHeader>
 
         <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="vault-name" className="text-xs font-medium">Obsidian vault name</Label>
+            <Input
+              id="vault-name"
+              type="text"
+              placeholder="e.g. my-vault"
+              value={draftVault}
+              onChange={(e) => setDraftVault(e.target.value)}
+              className="h-8 text-sm"
+            />
+            <p className="text-[10px] text-muted-foreground">Used to generate "Open in Obsidian" links on food entries.</p>
+          </div>
+
+          <div className="border-t border-border pt-4 flex flex-col gap-4">
           <TargetField
             id="target-calories"
             label="Calories"
@@ -118,6 +137,7 @@ export function TargetsSheet({ className }: { className?: string }) {
             value={draft.weight_kg}
             onChange={field('weight_kg')}
           />
+          </div>
         </div>
 
         <SheetFooter className="flex gap-2 mt-auto">

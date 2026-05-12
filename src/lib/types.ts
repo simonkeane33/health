@@ -48,6 +48,7 @@ export interface FoodEntry {
   reviewed_by?: string;
   reviewed_at?: string;
   tags?: string[];
+  source_file?: string;
 }
 
 export interface DailySummary {

@@ -11,6 +11,9 @@ import {
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { ExternalLink } from 'lucide-react';
+import { useTargets } from '@/lib/targets-context';
 
 interface Props {
   entry: FoodEntry | null;
@@ -41,6 +44,7 @@ function MetaRow({ label, value }: { label: string; value: string | null | undef
 }
 
 export function EntryDetailPanel({ entry, open, onClose }: Props) {
+  const { vaultName } = useTargets();
   if (!entry) return null;
 
   const displayedConfidence = entry.hermes_confidence ?? entry.confidence ?? 0;
@@ -114,6 +118,35 @@ export function EntryDetailPanel({ entry, open, onClose }: Props) {
               </div>
             )}
           </section>
+
+          {entry.source_file && (
+            <>
+              <Separator />
+              <section>
+                <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Source file</h3>
+                <p className="text-xs text-muted-foreground break-all mb-2">{entry.source_file}</p>
+                {vaultName ? (
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1.5"
+                  >
+                    <a
+                      href={`obsidian://open?vault=${encodeURIComponent(vaultName)}&file=${encodeURIComponent(entry.source_file)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Open in Obsidian
+                    </a>
+                  </Button>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground">Set vault name in ⚙ Settings to enable Obsidian links.</p>
+                )}
+              </section>
+            </>
+          )}
 
           <Separator />
 

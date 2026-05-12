@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
-import { AlertTriangle, CheckCircle2, XCircle, Info } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { AlertTriangle, CheckCircle2, XCircle, Info, ChevronDown, ChevronRight } from 'lucide-react';
 import type { VaultData } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -116,25 +116,32 @@ function IssueRow({ issue }: { issue: Issue }) {
   );
 }
 
-export function DataHealthCard({ data }: { data: VaultData }) {
+export function DataHealthCard({ data, defaultOpen = false }: { data: VaultData; defaultOpen?: boolean }) {
   const issues = useMemo(() => computeIssues(data), [data]);
   const errorCount = issues.filter((i) => i.severity === 'error').length;
   const warnCount = issues.filter((i) => i.severity === 'warning').length;
   const statusLabel = errorCount > 0 ? 'Issues found' : warnCount > 0 ? 'Warnings' : 'Clean';
+  // Auto-open if there are errors; otherwise use defaultOpen
+  const [open, setOpen] = useState(errorCount > 0 || defaultOpen);
 
   return (
     <Card>
-      <CardHeader className="pb-2 flex flex-row items-center justify-between gap-3">
-        <div>
-          <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground mb-1">Data quality</div>
-          <CardTitle className="text-lg flex items-center gap-2">
-            {issues.length === 0 ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            ) : (
-              <AlertTriangle className={`w-4 h-4 ${errorCount > 0 ? 'text-destructive' : 'text-amber-500'}`} />
-            )}
-            Data health
-          </CardTitle>
+      <CardHeader
+        className="pb-2 flex flex-row items-center justify-between gap-3 cursor-pointer select-none"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {open ? (
+            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          )}
+          <div className="text-xs font-medium tracking-wider uppercase text-muted-foreground">Data quality</div>
+          {!open && issues.length > 0 && (
+            <span className="text-[11px] text-muted-foreground">
+              · {issues.length} issue{issues.length !== 1 ? 's' : ''}
+            </span>
+          )}
         </div>
         <Badge
           variant={errorCount > 0 ? 'destructive' : warnCount > 0 ? 'outline' : 'secondary'}
@@ -143,25 +150,27 @@ export function DataHealthCard({ data }: { data: VaultData }) {
           {statusLabel}
         </Badge>
       </CardHeader>
-      <CardContent>
-        {issues.length === 0 ? (
-          <div className="flex items-center gap-2 py-4 text-emerald-600">
-            <CheckCircle2 className="w-4 h-4" />
-            <span className="text-sm">
-              No issues detected across {data.foodEntries.length} food entries and {data.weightEntries.length} weight entries.
-            </span>
-          </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {issues.map((issue) => (
-              <IssueRow key={issue.label} issue={issue} />
-            ))}
-          </div>
-        )}
-        <p className="text-[11px] text-muted-foreground mt-3">
-          {data.foodEntries.length} food · {data.weightEntries.length} weight · {data.dailySummaries.length} days
-        </p>
-      </CardContent>
+      {open && (
+        <CardContent>
+          {issues.length === 0 ? (
+            <div className="flex items-center gap-2 py-4 text-emerald-600">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-sm">
+                No issues detected across {data.foodEntries.length} food entries and {data.weightEntries.length} weight entries.
+              </span>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {issues.map((issue) => (
+                <IssueRow key={issue.label} issue={issue} />
+              ))}
+            </div>
+          )}
+          <p className="text-[11px] text-muted-foreground mt-3">
+            {data.foodEntries.length} food · {data.weightEntries.length} weight · {data.dailySummaries.length} days
+          </p>
+        </CardContent>
+      )}
     </Card>
   );
 }
