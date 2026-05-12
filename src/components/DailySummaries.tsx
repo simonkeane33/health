@@ -1,7 +1,7 @@
 'use client';
 
 import type { DailySummary } from '@/lib/types';
-import { formatNumber } from '@/lib/utils';
+import { formatDate, formatNumber } from '@/lib/utils';
 import { CalendarDays } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
@@ -62,13 +62,7 @@ export function DailySummaries({ entries, limit = 7 }: Props) {
             {days.map((day) => (
               <tr key={day.id}>
                 <td className="py-3 px-2 border-b border-border whitespace-nowrap">
-                  {day.entry_date
-                    ? new Date(day.entry_date + 'T00:00:00').toLocaleDateString('en-GB', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                      })
-                    : '—'}
+                  {formatDate(day.entry_date)}
                 </td>
                 <td className="py-3 px-2 border-b border-border">
                   <strong className="tabular-nums">{formatNumber(day.total_calories ?? 0, 0)}</strong>{' '}

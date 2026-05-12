@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { DailySummary } from '@/lib/types';
+import { formatShortDate } from '@/lib/utils';
 import {
   ChartContainer,
   ChartTooltipContent,
@@ -80,10 +81,7 @@ export function IntakeTrendChart({ summaries, range, height = 260 }: IntakeChart
 
   const data = useMemo(() => {
     return filterAndSort(summaries, range).map((s) => ({
-      date: new Date(s.entry_date).toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'short',
-      }),
+      date: formatShortDate(s.entry_date),
       calories: s.total_calories ?? 0,
       sugar_g: s.sugar_g ?? 0,
       protein_g: s.protein_g ?? 0,
@@ -250,10 +248,7 @@ export function WeightTrendChart({ summaries, range, height = 260 }: Props) {
     return filterAndSort(summaries, range)
       .filter((s) => s.weight_kg != null)
       .map((s) => ({
-        date: new Date(s.entry_date).toLocaleDateString('en-GB', {
-          day: 'numeric',
-          month: 'short',
-        }),
+        date: formatShortDate(s.entry_date),
         weight: Number(s.weight_kg),
       }));
   }, [summaries, range]);

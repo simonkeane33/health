@@ -5,30 +5,44 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatDate(iso: string | undefined): string {
-  if (!iso) return '—';
+/** Return true for any value that would produce an Invalid Date. */
+function isInvalidDateInput(iso: string | undefined): boolean {
+  if (!iso) return true;
   const d = new Date(iso);
+  return Number.isNaN(d.getTime());
+}
+
+export function formatDate(iso: string | undefined): string {
+  if (isInvalidDateInput(iso)) return '—';
+  const d = new Date(iso!);
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export function formatTime(iso: string | undefined): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
+  if (isInvalidDateInput(iso)) return '—';
+  const d = new Date(iso!);
   return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
 export function formatDateTime(iso: string | undefined): string {
-  if (!iso) return '—';
+  if (isInvalidDateInput(iso)) return '—';
   // If the value is a date-only string (no time component), show just the date.
-  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(iso);
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(iso!);
   if (isDateOnly) return formatDate(iso);
-  const d = new Date(iso);
+  const d = new Date(iso!);
   return d.toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+/** Short date for chart axes: "12 May". */
+export function formatShortDate(iso: string | undefined): string {
+  if (isInvalidDateInput(iso)) return '—';
+  const d = new Date(iso!);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
 export function formatNumber(value: number | null | undefined, decimals = 0): string {

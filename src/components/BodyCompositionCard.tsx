@@ -1,7 +1,7 @@
 'use client';
 
 import type { DailySummary } from '@/lib/types';
-import { formatNumber } from '@/lib/utils';
+import { formatDate, formatNumber } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface Props {
@@ -12,7 +12,7 @@ export function BodyCompositionCard({ summaries }: Props) {
   const latest = summaries[0];
   if (!latest) return null;
 
-  const hasData = latest.weight_kg != null || latest.bmi != null || latest.body_fat_pct != null;
+  const hasData = latest.body_fat_pct != null || latest.muscle_mass_pct != null || latest.bone_mass_pct != null || latest.bmi != null || latest.body_water_pct != null;
   if (!hasData) return null;
 
   const prev = summaries[1];
@@ -26,11 +26,7 @@ export function BodyCompositionCard({ summaries }: Props) {
         </div>
         {latest.entry_date && (
           <span className="text-xs text-muted-foreground">
-            {new Date(latest.entry_date + 'T00:00:00').toLocaleDateString('en-GB', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-            })}
+            {formatDate(latest.entry_date)}
           </span>
         )}
       </CardHeader>
@@ -68,6 +64,12 @@ export function BodyCompositionCard({ summaries }: Props) {
             </div>
           </>
         )}
+
+        {/* Secondary metrics — BMI and Body Water */}
+        <div className="grid grid-cols-2 gap-4">
+          <Metric label="Body Water" value={latest.body_water_pct} unit="%" decimals={1} prev={prev?.body_water_pct} />
+          <Metric label="BMI" value={latest.bmi} unit="" decimals={1} prev={prev?.bmi} />
+        </div>
 
       </CardContent>
     </Card>
