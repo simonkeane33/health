@@ -13,6 +13,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { rollingAverage } from '@/lib/trend-utils';
+import { DEFAULT_TARGETS } from '@/lib/targets';
 import type { DailySummary } from '@/lib/types';
 import { formatShortDate } from '@/lib/utils';
 import {
@@ -84,9 +85,13 @@ export function IntakeTrendChart({ summaries, range, height = 260 }: IntakeChart
   const [active, setActive] = useState<Set<NutrientKey>>(() => defaultActive(summaries));
 
   const data = useMemo(() => {
-    return filterAndSort(summaries, range).map((s) => ({
+    const sorted = filterAndSort(summaries, range);
+    const calPoints = sorted.map((s) => ({ value: s.total_calories ?? null }));
+    const calAvg7 = rollingAverage(calPoints, 7);
+    return sorted.map((s, i) => ({
       date: formatShortDate(s.entry_date),
       calories: s.total_calories ?? 0,
+      calAvg7: calAvg7[i],
       sugar_g: s.sugar_g ?? 0,
       protein_g: s.protein_g ?? 0,
       carbs_g: s.carbs_g ?? 0,
@@ -227,11 +232,35 @@ export function IntakeTrendChart({ summaries, range, height = 260 }: IntakeChart
                   name={COLORS[key].label}
                   stroke={color}
                   strokeWidth={2.5}
+                  strokeOpacity={0.45}
                   dot={false}
                   activeDot={{ r: 4, stroke: color, strokeWidth: 2, fill: '#000' }}
                 />
               );
             })}
+            {calorieVisible && (
+              <Line
+                yAxisId="cal"
+                type="monotone"
+                dataKey="calAvg7"
+                name="Cal 7-day avg"
+                stroke={COLORS.calories.color}
+                strokeWidth={2.5}
+                dot={false}
+                connectNulls
+                legendType="none"
+              />
+            )}
+            {calorieVisible && (
+              <ReferenceLine
+                yAxisId="cal"
+                y={DEFAULT_TARGETS.calories_kcal}
+                stroke="#34d399"
+                strokeDasharray="4 2"
+                strokeWidth={1}
+                label={{ value: 'Target', position: 'insideTopRight', fontSize: 10, fill: '#34d399' }}
+              />
+            )}
           </LineChart>
         </ResponsiveContainer>
       </ChartContainer>
@@ -343,7 +372,7 @@ export function WeightTrendChart({ summaries, range, height = 260 }: Props) {
             />
           )}
           <ReferenceLine
-            y={90}
+            y={DEFAULT_TARGETS.weight_kg}
             stroke="#34d399"
             strokeDasharray="4 2"
             strokeWidth={1}

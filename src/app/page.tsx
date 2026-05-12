@@ -34,6 +34,7 @@ import { BodyCompositionCard } from '@/components/BodyCompositionCard';
 import { DailyMacroCard } from '@/components/DailyMacroCard';
 import { WeeklyMacroChart } from '@/components/WeeklyMacroChart';
 import { DataHealthCard } from '@/components/DataHealthCard';
+import { WeeklyAdherenceCard } from '@/components/WeeklyAdherenceCard';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 type RangeValue = '7' | '14' | '30' | '90' | '365' | 'all';
@@ -175,6 +176,9 @@ export default function Home() {
 
             {/* Data health */}
             <DataHealthCard data={data} />
+
+            {/* Weekly adherence */}
+            <WeeklyAdherenceCard summaries={data.dailySummaries} />
 
             {/* Body Composition */}
             <BodyCompositionCard summaries={data.dailySummaries} />
