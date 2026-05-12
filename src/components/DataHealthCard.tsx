@@ -52,21 +52,35 @@ function computeIssues(data: VaultData): Issue[] {
     issues.push({ severity: 'info', label: 'Weight without intake', count: weightOnlyDays, detail: 'days with weight logged but no food entries' });
   }
 
-  const sortedFood = [...foodEntries].sort((a, b) => a.logged_at.localeCompare(b.logged_at));
-  let duplicateLike = 0;
-  for (let i = 1; i < sortedFood.length; i++) {
-    const prev = sortedFood[i - 1];
-    const curr = sortedFood[i];
-    if (
-      prev.entry_date === curr.entry_date &&
-      prev.estimated_calories === curr.estimated_calories &&
-      Math.abs(new Date(curr.logged_at).getTime() - new Date(prev.logged_at).getTime()) < 2 * 60 * 1000
-    ) {
-      duplicateLike++;
+  const byDate = new Map<string, typeof foodEntries>();
+  for (const e of foodEntries) {
+    const day = e.entry_date ?? '';
+    if (!byDate.has(day)) byDate.set(day, []);
+    byDate.get(day)!.push(e);
+  }
+  const duplicateIds = new Set<string>();
+  for (const dayEntries of byDate.values()) {
+    const sorted = [...dayEntries].sort((a, b) => a.logged_at.localeCompare(b.logged_at));
+    for (let i = 0; i < sorted.length; i++) {
+      for (let j = i + 1; j < sorted.length; j++) {
+        const a = sorted[i];
+        const b = sorted[j];
+        const sameCalWithin2min =
+          a.estimated_calories != null &&
+          a.estimated_calories === b.estimated_calories &&
+          Math.abs(new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime()) < 2 * 60 * 1000;
+        const firstItemA = a.items[0]?.trim().toLowerCase();
+        const firstItemB = b.items[0]?.trim().toLowerCase();
+        const sameFirstItem = !!firstItemA && firstItemA === firstItemB;
+        if (sameCalWithin2min || sameFirstItem) {
+          duplicateIds.add(a.id);
+          duplicateIds.add(b.id);
+        }
+      }
     }
   }
-  if (duplicateLike > 0) {
-    issues.push({ severity: 'warning', label: 'Possible duplicates', count: duplicateLike, detail: 'food entries with identical calories logged within 2 minutes' });
+  if (duplicateIds.size > 0) {
+    issues.push({ severity: 'warning', label: 'Possible duplicates', count: duplicateIds.size, detail: 'entries sharing the same first food item or identical calories within 2 min on the same day' });
   }
 
   const badSummaries = dailySummaries.filter(
