@@ -13,7 +13,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { rollingAverage } from '@/lib/trend-utils';
-import { DEFAULT_TARGETS } from '@/lib/targets';
+import { useTargets } from '@/lib/targets-context';
 import type { DailySummary } from '@/lib/types';
 import { formatShortDate } from '@/lib/utils';
 import {
@@ -82,6 +82,7 @@ function defaultActive(summaries: DailySummary[]): Set<NutrientKey> {
 }
 
 export function IntakeTrendChart({ summaries, range, height = 260 }: IntakeChartProps) {
+  const { targets } = useTargets();
   const [active, setActive] = useState<Set<NutrientKey>>(() => defaultActive(summaries));
 
   const data = useMemo(() => {
@@ -254,7 +255,7 @@ export function IntakeTrendChart({ summaries, range, height = 260 }: IntakeChart
             {calorieVisible && (
               <ReferenceLine
                 yAxisId="cal"
-                y={DEFAULT_TARGETS.calories_kcal}
+                y={targets.calories_kcal}
                 stroke="#34d399"
                 strokeDasharray="4 2"
                 strokeWidth={1}
@@ -277,6 +278,7 @@ interface Props {
 }
 
 export function WeightTrendChart({ summaries, range, height = 260 }: Props) {
+  const { targets } = useTargets();
   const data = useMemo(() => {
     const sorted = filterAndSort(summaries, range);
     const rawPoints = sorted.map((s) => ({
@@ -372,7 +374,7 @@ export function WeightTrendChart({ summaries, range, height = 260 }: Props) {
             />
           )}
           <ReferenceLine
-            y={DEFAULT_TARGETS.weight_kg}
+            y={targets.weight_kg}
             stroke="#34d399"
             strokeDasharray="4 2"
             strokeWidth={1}

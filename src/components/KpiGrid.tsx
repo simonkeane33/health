@@ -4,7 +4,8 @@ import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import type { VaultData } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { computeWeeklyMetrics } from '@/lib/weeklyMetrics';
-import { DEFAULT_TARGETS, getTargetState, formatVariance } from '@/lib/targets';
+import { getTargetState, formatVariance } from '@/lib/targets';
+import { useTargets } from '@/lib/targets-context';
 
 function WeeklyDelta({
   currentAvg,
@@ -58,7 +59,7 @@ function getBmiLabel(bmi: number): string {
 }
 
 export function KpiGrid({ data }: { data?: VaultData | null }) {
-  const targets = DEFAULT_TARGETS;
+  const { targets } = useTargets();
 
   if (!data) {
     return (

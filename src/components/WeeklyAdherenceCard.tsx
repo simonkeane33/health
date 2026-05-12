@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import type { DailySummary } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { DEFAULT_TARGETS } from '@/lib/targets';
+import { useTargets } from '@/lib/targets-context';
 
 interface Props {
   summaries: DailySummary[];
@@ -35,6 +35,7 @@ function DayDot({ hit }: { hit: boolean | null }) {
 }
 
 export function WeeklyAdherenceCard({ summaries, days = 7 }: Props) {
+  const { targets } = useTargets();
   const { rows, dateLabels } = useMemo(() => {
     const sorted = [...summaries]
       .sort((a, b) => b.entry_date.localeCompare(a.entry_date))
@@ -50,25 +51,25 @@ export function WeeklyAdherenceCard({ summaries, days = 7 }: Props) {
       {
         label: 'Calories',
         unit: 'kcal',
-        target: DEFAULT_TARGETS.calories_kcal,
+        target: targets.calories_kcal,
         values: sorted.map((s) => s.total_calories),
       },
       {
         label: 'Protein',
         unit: 'g',
-        target: DEFAULT_TARGETS.protein_g,
+        target: targets.protein_g,
         values: sorted.map((s) => s.protein_g),
       },
       {
         label: 'Fluids',
         unit: 'ml',
-        target: DEFAULT_TARGETS.fluids_ml,
+        target: targets.fluids_ml,
         values: sorted.map((s) => s.fluids_ml),
       },
     ];
 
     return { rows: metrics, dateLabels: labels };
-  }, [summaries, days]);
+  }, [summaries, days, targets]);
 
   if (summaries.length === 0) {
     return null;

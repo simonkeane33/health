@@ -35,6 +35,8 @@ import { DailyMacroCard } from '@/components/DailyMacroCard';
 import { WeeklyMacroChart } from '@/components/WeeklyMacroChart';
 import { DataHealthCard } from '@/components/DataHealthCard';
 import { WeeklyAdherenceCard } from '@/components/WeeklyAdherenceCard';
+import { TargetsSheet } from '@/components/TargetsSheet';
+import { TargetsProvider } from '@/lib/targets-context';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 type RangeValue = '7' | '14' | '30' | '90' | '365' | 'all';
@@ -91,6 +93,7 @@ export default function Home() {
   }
 
   return (
+    <TargetsProvider>
     <div className="min-h-svh bg-background">
       {/* Page header — vault controls + theme */}
       <header className="border-b px-4 lg:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
@@ -143,6 +146,7 @@ export default function Home() {
             </Button>
           )}
 
+          <TargetsSheet />
           <ThemeToggle className="h-8 w-8 rounded-lg border" size="sm" />
         </div>
       </header>
@@ -262,5 +266,6 @@ export default function Home() {
         )}
       </main>
     </div>
+    </TargetsProvider>
   );
 }
