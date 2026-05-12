@@ -141,10 +141,11 @@ export function WeeklyMacroChart({ summaries, height = 260 }: Props) {
         </CardHeader>
         <CardContent className="flex-1">
           <div
-            className="flex items-center justify-center rounded-lg border border-dashed"
+            className="flex flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed"
             style={{ height }}
           >
             <p className="text-sm text-muted-foreground">No macro data for selected range.</p>
+            <p className="text-[11px] text-muted-foreground">Try a wider range or log protein, carbs, and fat entries.</p>
           </div>
         </CardContent>
       </Card>

@@ -22,7 +22,23 @@ interface ExerciseCardProps {
 }
 
 export function ExerciseCard({ entries }: ExerciseCardProps) {
-  if (entries.length === 0) return null;
+  if (entries.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-2">
+          <Activity className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-base">Exercise</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center gap-2 py-8 text-muted-foreground">
+            <Activity className="h-8 w-8 opacity-30" />
+            <p className="text-sm">No exercise entries found in the loaded vault.</p>
+            <p className="text-[11px]">Log an exercise note in Obsidian and reload the folder.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const latest = entries[0];
   const totalActivities = entries.length;

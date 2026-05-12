@@ -42,9 +42,10 @@ export function DailyMacroCard({ summary }: { summary?: DailySummary }) {
           <CardTitle className="text-sm font-semibold">Macro Composition</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
-            <Apple className="h-8 w-8 opacity-40" />
+          <div className="flex flex-col items-center justify-center gap-2 py-8 text-muted-foreground">
+            <Apple className="h-8 w-8 opacity-30" />
             <p className="text-sm">No macro data for today.</p>
+            <p className="text-[11px]">Macros appear once protein, carbs, or fat are logged.</p>
           </div>
         </CardContent>
       </Card>
