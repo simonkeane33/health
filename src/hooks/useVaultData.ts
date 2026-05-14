@@ -191,6 +191,17 @@ export function useVaultData() {
     }
   }, [loadFromHandle]);
 
+  /* ── Refresh: re-read the vault from the saved handle (no picker needed) ── */
+  const refresh = useCallback(async () => {
+    const handle = savedHandleRef.current;
+    if (!handle || loading) return;
+    await loadFromHandle(handle);
+  }, [loadFromHandle, loading]);
+
+  // Note: previously refreshed on window focus; removed because it triggered
+  // a full re-scan every time the tab regained focus. Use the manual refresh
+  // button in the header instead.
+
   /* ── Open folder picker and save the chosen handle ── */
   const openDirectoryPicker = useCallback(async () => {
     if (!('showDirectoryPicker' in window)) return;
@@ -256,6 +267,7 @@ export function useVaultData() {
     savedVaultName,
     reconnectNeeded,
     reconnect,
+    refresh,
     openDirectoryPicker,
     loadFiles,
     clearData,
