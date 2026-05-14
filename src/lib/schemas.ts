@@ -63,7 +63,8 @@ export const FoodEntrySchema = z.object({
   meal_type: requiredString(),
   source: requiredString(),
   source_channel: optionalString(),
-  image: optionalString(),
+  // image can be a plain string path OR an array of {path, description} objects
+  image: z.unknown().optional(),
   items: stringArray(),
   estimated_calories: optionalNumber().default(0),
   protein_g: optionalNumber(),

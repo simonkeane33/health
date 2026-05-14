@@ -1,13 +1,15 @@
 export interface DailyTargets {
   calories_kcal: number;
   protein_g: number;
+  carbs_g: number;
   fluids_ml: number;
   weight_kg: number;
 }
 
 export const DEFAULT_TARGETS: DailyTargets = {
-  calories_kcal: 2000,
+  calories_kcal: 1974,
   protein_g: 150,
+  carbs_g: 195,
   fluids_ml: 2500,
   weight_kg: 90,
 };

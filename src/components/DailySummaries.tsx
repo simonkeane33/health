@@ -155,7 +155,14 @@ export function DailySummaries({ entries }: Props) {
                       ) : null}
                     </td>
                     <td className="py-3 px-2 border-b border-border whitespace-nowrap">
-                      {formatDate(day.entry_date)}
+                      {day.entry_date === new Date().toISOString().split('T')[0] ? (
+                        <span>
+                          <span className="font-semibold text-primary">Today</span>
+                          <span className="text-muted-foreground"> · {formatDate(day.entry_date)}</span>
+                        </span>
+                      ) : (
+                        formatDate(day.entry_date)
+                      )}
                     </td>
                     <td className="py-3 px-2 border-b border-border">
                       {(day.total_calories ?? 0) > 0 ? (

@@ -125,17 +125,19 @@ export function aggregateDailySummaries(
     if (existing) {
       byDate.set(date, {
         ...computed,
-        // Explicit summary values take precedence over computed
-        total_calories: existing.total_calories || computed.total_calories,
-        protein_g: existing.protein_g || computed.protein_g,
-        carbs_g: existing.carbs_g || computed.carbs_g,
-        fat_g: existing.fat_g || computed.fat_g,
-        fiber_g: existing.fiber_g || computed.fiber_g,
-        sugar_g: existing.sugar_g || computed.sugar_g,
-        fluids_ml: existing.fluids_ml || computed.fluids_ml,
-        alcohol_units: existing.alcohol_units || computed.alcohol_units,
-        food_entries: existing.food_entries || computed.food_entries,
-        needs_review_count: existing.needs_review_count || computed.needs_review_count,
+        // Prefer computed (summed from individual entries) when it is non-zero;
+        // fall back to the daily_summary note value for days where no individual
+        // food entry files were parsed (e.g. older summary-only days).
+        total_calories: computed.total_calories || existing.total_calories,
+        protein_g: computed.protein_g || existing.protein_g,
+        carbs_g: computed.carbs_g || existing.carbs_g,
+        fat_g: computed.fat_g || existing.fat_g,
+        fiber_g: computed.fiber_g || existing.fiber_g,
+        sugar_g: computed.sugar_g || existing.sugar_g,
+        fluids_ml: computed.fluids_ml || existing.fluids_ml,
+        alcohol_units: computed.alcohol_units || existing.alcohol_units,
+        food_entries: computed.food_entries || existing.food_entries,
+        needs_review_count: computed.needs_review_count || existing.needs_review_count,
         weight_kg: existing.weight_kg ?? computed.weight_kg,
         body_fat_pct: existing.body_fat_pct ?? computed.body_fat_pct,
         muscle_mass_pct: existing.muscle_mass_pct ?? computed.muscle_mass_pct,

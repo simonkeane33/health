@@ -14,7 +14,16 @@ export function FoodVsDrinkCard({ entries }: Props) {
   let drinkCount = 0;
 
   for (const entry of entries) {
-    const isDrink = entry.meal_type === 'Drink' || (entry.fluids_ml ?? 0) > 0;
+    const mealType = (entry.meal_type ?? '').toLowerCase().trim();
+    // Drink = explicit drink/beverage meal_type, OR has fluids but ~no solid food
+    // (small fluids_ml accompanying a meal like soup or 10ml dressing isn't a "drink")
+    const calories = entry.estimated_calories ?? 0;
+    const fluidsHeavy = (entry.fluids_ml ?? 0) >= 100;
+    const lowSolidCalsRatio = calories === 0 || (entry.fluids_ml ?? 0) / Math.max(calories, 1) > 1.5;
+    const isDrink =
+      mealType === 'drink' ||
+      mealType === 'beverage' ||
+      (fluidsHeavy && lowSolidCalsRatio);
     if (isDrink) drinkCount++;
     else foodCount++;
   }

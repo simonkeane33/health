@@ -1,11 +1,12 @@
 'use client';
 
-import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import { TrendingDown, TrendingUp, Minus, Flame } from 'lucide-react';
 import type { VaultData } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { computeWeeklyMetrics } from '@/lib/weeklyMetrics';
 import { getTargetState, formatVariance } from '@/lib/targets';
 import { useTargets } from '@/lib/targets-context';
+import { projectEndOfDay, computeWeightTrajectory, computeStreak } from '@/lib/projections';
 
 function WeeklyDelta({
   currentAvg,
@@ -36,11 +37,27 @@ function WeeklyDelta({
   );
 }
 
-function TargetBar({ actual, target }: { actual: number; target: number }) {
+function TargetBar({
+  actual,
+  target,
+  mode = 'lower-ok',
+}: {
+  actual: number;
+  target: number;
+  /** lower-ok: over target = red (calories/protein). higher-ok: under target = red, hitting = green (fluids). */
+  mode?: 'lower-ok' | 'higher-ok';
+}) {
   const pct = Math.min(100, Math.round((actual / target) * 100));
-  const state = getTargetState(actual, target);
-  const barColor =
-    state === 'over' ? 'bg-destructive' : state === 'on_track' ? 'bg-emerald-500' : 'bg-amber-400';
+
+  let barColor: string;
+  if (mode === 'higher-ok') {
+    // Red below 75%, amber 75–99%, green at or above target
+    barColor = pct >= 100 ? 'bg-emerald-500' : pct >= 75 ? 'bg-amber-400' : 'bg-destructive';
+  } else {
+    const state = getTargetState(actual, target);
+    barColor = state === 'over' ? 'bg-destructive' : state === 'on_track' ? 'bg-emerald-500' : 'bg-amber-400';
+  }
+
   return (
     <div className="flex items-center gap-2 mt-1">
       <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
@@ -63,8 +80,8 @@ export function KpiGrid({ data }: { data?: VaultData | null }) {
 
   if (!data) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {['Latest weight', 'Calories today', 'Protein today', 'Fluids today'].map((label) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        {['Weight', 'Calories today', 'Protein today', 'Carbs today', 'Fluids today'].map((label) => (
           <Card key={label}>
             <CardHeader>
               <CardTitle className="text-xs font-medium tracking-wider uppercase text-muted-foreground">{label}</CardTitle>
@@ -79,29 +96,42 @@ export function KpiGrid({ data }: { data?: VaultData | null }) {
     );
   }
 
+  // Weight: always the most recent entry regardless of date
   const latestWeight = data.weightEntries[0];
   const prevWeight = data.weightEntries[1];
+
+  // Daily stats: today only — reset to 0 if today has no entries yet
+  const todayDate = new Date().toISOString().split('T')[0];
+  const todaySummary = data.dailySummaries.find((s) => s.entry_date === todayDate);
+  const prevSummary = data.dailySummaries.find((s) => s.entry_date !== todayDate) ?? data.dailySummaries[1];
+
+  // Weight card uses the latest summary for BMI regardless of date
   const latestSummary = data.dailySummaries[0];
-  const prevSummary = data.dailySummaries[1];
 
   const days = data.weightEntries.length;
   const weightCurrent = latestWeight?.weight_kg ?? 0;
   const weightRemaining = Math.max(0, weightCurrent - targets.weight_kg);
   const bmiCurrent = latestSummary?.bmi;
 
-  const caloriesToday = latestSummary?.total_calories ?? 0;
-  const proteinToday = latestSummary?.protein_g ?? 0;
-  const fluidToday = latestSummary?.fluids_ml ?? 0;
+  const caloriesToday = todaySummary?.total_calories ?? 0;
+  const proteinToday = todaySummary?.protein_g ?? 0;
+  const carbsToday = todaySummary?.carbs_g ?? 0;
+  const fluidToday = todaySummary?.fluids_ml ?? 0;
 
   const weekly = computeWeeklyMetrics(data.dailySummaries);
 
-  const todaySummaryDate = latestSummary?.entry_date ?? '';
-  const isToday = todaySummaryDate === new Date().toISOString().split('T')[0];
-  const todayLabel = isToday ? 'today' : todaySummaryDate;
+  // Projections, streaks, trajectory
+  const projectedCalories = projectEndOfDay(caloriesToday);
+  const projectedProtein = projectEndOfDay(proteinToday);
+  const projectedFluids = projectEndOfDay(fluidToday);
+  const trajectory = computeWeightTrajectory(data.weightEntries, targets.weight_kg);
+  const calorieStreak = computeStreak(data.dailySummaries, 'calories', targets);
+  const proteinStreak = computeStreak(data.dailySummaries, 'protein', targets);
+  const fluidStreak = computeStreak(data.dailySummaries, 'fluids', targets);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* Weight */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      {/* Weight — always shows latest, no daily reset */}
       <Card>
         <CardHeader>
           <CardTitle className="text-xs font-medium tracking-wider uppercase text-muted-foreground">Weight</CardTitle>
@@ -126,6 +156,15 @@ export function KpiGrid({ data }: { data?: VaultData | null }) {
               Target: {targets.weight_kg} kg
               {weightRemaining > 0 ? ` · ${weightRemaining.toFixed(1)} kg to go` : ' · ✓ At target'}
             </p>
+            {trajectory && trajectory.daysToTarget != null && (
+              <p className="text-[11px] text-emerald-500/90 font-medium">
+                ETA: {trajectory.daysToTarget} day{trajectory.daysToTarget === 1 ? '' : 's'}
+                <span className="text-muted-foreground font-normal">
+                  {' · '}
+                  {(trajectory.slopeKgPerDay * 7).toFixed(2)} kg/wk
+                </span>
+              </p>
+            )}
             {(bmiCurrent ?? 0) > 0 && (
               <p className="text-[11px] text-muted-foreground">
                 BMI {(bmiCurrent as number).toFixed(1)} · {getBmiLabel(bmiCurrent as number)} · {days} days tracked
@@ -135,11 +174,11 @@ export function KpiGrid({ data }: { data?: VaultData | null }) {
         </CardContent>
       </Card>
 
-      {/* Calories */}
+      {/* Calories — resets daily */}
       <Card>
         <CardHeader>
           <CardTitle className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
-            Calories {todayLabel}
+            Calories today
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-1.5">
@@ -154,8 +193,19 @@ export function KpiGrid({ data }: { data?: VaultData | null }) {
           )}
           <p className="text-[11px] text-muted-foreground">
             Target: {targets.calories_kcal.toLocaleString()} kcal
-            {latestSummary && ` · ${latestSummary.food_entries ?? 0} entries`}
+            {todaySummary && ` · ${todaySummary.food_entries ?? 0} entries`}
           </p>
+          {projectedCalories != null && caloriesToday > 0 && (
+            <p className="text-[11px] text-primary/80">
+              Pace: ~{projectedCalories.toLocaleString()} kcal by midnight
+            </p>
+          )}
+          {calorieStreak >= 2 && (
+            <p className="text-[11px] text-emerald-500/90 flex items-center gap-1">
+              <Flame className="w-3 h-3" />
+              {calorieStreak}-day streak under target
+            </p>
+          )}
           {weekly.calories.currentAvg !== undefined && (
             <WeeklyDelta
               currentAvg={weekly.calories.currentAvg}
@@ -167,11 +217,11 @@ export function KpiGrid({ data }: { data?: VaultData | null }) {
         </CardContent>
       </Card>
 
-      {/* Protein */}
+      {/* Protein — resets daily */}
       <Card>
         <CardHeader>
           <CardTitle className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
-            Protein {todayLabel}
+            Protein today
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-1.5">
@@ -184,24 +234,49 @@ export function KpiGrid({ data }: { data?: VaultData | null }) {
               <TargetBar actual={proteinToday} target={targets.protein_g} />
             </>
           )}
-          <p className="text-[11px] text-muted-foreground">
-            Target: {targets.protein_g} g
-          </p>
+          <p className="text-[11px] text-muted-foreground">Target: {targets.protein_g} g</p>
+          {projectedProtein != null && proteinToday > 0 && (
+            <p className="text-[11px] text-primary/80">
+              Pace: ~{projectedProtein} g by midnight
+            </p>
+          )}
+          {proteinStreak >= 2 && (
+            <p className="text-[11px] text-emerald-500/90 flex items-center gap-1">
+              <Flame className="w-3 h-3" />
+              {proteinStreak}-day streak hitting target
+            </p>
+          )}
           {(prevSummary?.protein_g ?? 0) > 0 && proteinToday > 0 && (
-            <WeeklyDelta
-              currentAvg={proteinToday}
-              priorAvg={prevSummary!.protein_g}
-              unit="g"
-            />
+            <WeeklyDelta currentAvg={proteinToday} priorAvg={prevSummary!.protein_g} unit="g" />
           )}
         </CardContent>
       </Card>
 
-      {/* Fluids */}
+      {/* Carbs — resets daily */}
       <Card>
         <CardHeader>
           <CardTitle className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
-            Fluids {todayLabel}
+            Carbs today
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1.5">
+          <div className="text-[clamp(1.75rem,1.1rem_+_1.8vw,2.7rem)] font-bold tabular-nums tracking-tight">
+            {carbsToday > 0 ? `${Math.round(carbsToday)} g` : '—'}
+          </div>
+          {carbsToday > 0 && (
+            <p className="text-xs text-muted-foreground">{formatVariance(carbsToday, targets.carbs_g, 'g')}</p>
+          )}
+          {(prevSummary?.carbs_g ?? 0) > 0 && carbsToday > 0 && (
+            <WeeklyDelta currentAvg={carbsToday} priorAvg={prevSummary!.carbs_g} unit="g" />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Fluids — resets daily */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xs font-medium tracking-wider uppercase text-muted-foreground">
+            Fluids today
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-1.5">
@@ -211,18 +286,23 @@ export function KpiGrid({ data }: { data?: VaultData | null }) {
           {fluidToday > 0 && (
             <>
               <p className="text-xs text-muted-foreground">{formatVariance(fluidToday, targets.fluids_ml, 'ml')}</p>
-              <TargetBar actual={fluidToday} target={targets.fluids_ml} />
+              <TargetBar actual={fluidToday} target={targets.fluids_ml} mode="higher-ok" />
             </>
           )}
-          <p className="text-[11px] text-muted-foreground">
-            Target: {targets.fluids_ml.toLocaleString()} ml
-          </p>
+          <p className="text-[11px] text-muted-foreground">Target: {targets.fluids_ml.toLocaleString()} ml</p>
+          {projectedFluids != null && fluidToday > 0 && (
+            <p className="text-[11px] text-primary/80">
+              Pace: ~{projectedFluids.toLocaleString()} ml by midnight
+            </p>
+          )}
+          {fluidStreak >= 2 && (
+            <p className="text-[11px] text-emerald-500/90 flex items-center gap-1">
+              <Flame className="w-3 h-3" />
+              {fluidStreak}-day streak hitting target
+            </p>
+          )}
           {(prevSummary?.fluids_ml ?? 0) > 0 && fluidToday > 0 && (
-            <WeeklyDelta
-              currentAvg={fluidToday}
-              priorAvg={prevSummary!.fluids_ml}
-              unit="ml"
-            />
+            <WeeklyDelta currentAvg={fluidToday} priorAvg={prevSummary!.fluids_ml} unit="ml" />
           )}
         </CardContent>
       </Card>

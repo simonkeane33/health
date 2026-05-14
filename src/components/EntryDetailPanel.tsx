@@ -24,10 +24,11 @@ interface Props {
 function NutritionRow({ label, value, unit }: { label: string; value: number | null | undefined; unit: string }) {
   if (value == null || Number.isNaN(value)) return null;
   return (
-    <div className="flex justify-between items-center py-1.5">
+    <div className="flex justify-between items-center py-2.5">
       <span className="text-sm text-muted-foreground">{label}</span>
       <span className="text-sm font-medium tabular-nums">
-        {formatNumber(value, typeof value === 'number' && value % 1 !== 0 ? 1 : 0)} <span className="text-muted-foreground font-normal">{unit}</span>
+        {formatNumber(value, typeof value === 'number' && value % 1 !== 0 ? 1 : 0)}{' '}
+        <span className="text-muted-foreground font-normal">{unit}</span>
       </span>
     </div>
   );
@@ -36,9 +37,9 @@ function NutritionRow({ label, value, unit }: { label: string; value: number | n
 function MetaRow({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value) return null;
   return (
-    <div className="flex justify-between items-center py-1">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-sm">{value}</span>
+    <div className="flex justify-between items-start gap-4 py-2">
+      <span className="text-sm text-muted-foreground shrink-0">{label}</span>
+      <span className="text-sm text-right">{value}</span>
     </div>
   );
 }
@@ -54,21 +55,24 @@ export function EntryDetailPanel({ entry, open, onClose }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader className="pb-2">
-          <SheetTitle className="text-base">{entry.meal_type || 'Entry'}</SheetTitle>
-          <SheetDescription>
+      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto px-6">
+        <SheetHeader className="pb-4 pt-1">
+          <SheetTitle className="text-lg capitalize">{entry.meal_type || 'Entry'}</SheetTitle>
+          <SheetDescription className="text-sm">
             {formatDateTime(entry.logged_at || entry.entry_date)}
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex flex-col gap-5 py-2">
+        <div className="flex flex-col gap-6 pb-8">
           {/* Items */}
           <section>
-            <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Items</h3>
-            <ul className="list-disc list-inside space-y-0.5 text-sm">
+            <h3 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Items</h3>
+            <ul className="space-y-2">
               {entry.items.map((item, i) => (
-                <li key={i}>{item}</li>
+                <li key={i} className="flex gap-2.5 text-sm">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
+                  <span>{item}</span>
+                </li>
               ))}
             </ul>
           </section>
@@ -77,8 +81,8 @@ export function EntryDetailPanel({ entry, open, onClose }: Props) {
 
           {/* Nutrition */}
           <section>
-            <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Nutrition</h3>
-            <div className="divide-y divide-border">
+            <h3 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Nutrition</h3>
+            <div className="divide-y divide-border/60">
               <NutritionRow label="Calories" value={entry.estimated_calories} unit="kcal" />
               <NutritionRow label="Protein" value={entry.protein_g} unit="g" />
               <NutritionRow label="Carbs" value={entry.carbs_g} unit="g" />
@@ -94,43 +98,45 @@ export function EntryDetailPanel({ entry, open, onClose }: Props) {
 
           {/* Metadata */}
           <section>
-            <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Metadata</h3>
-            <MetaRow label="Entry type" value={entry.entry_type} />
-            <MetaRow label="Date" value={entry.entry_date} />
-            <MetaRow label="Source" value={entry.source} />
-            <MetaRow label="Channel" value={entry.source_channel} />
-            <MetaRow label="Location" value={entry.location} />
-            <MetaRow label="Mood" value={entry.mood} />
-            {entry.tags && entry.tags.length > 0 && (
-              <div className="flex justify-between items-start py-1 gap-2">
-                <span className="text-sm text-muted-foreground">Tags</span>
-                <div className="flex flex-wrap gap-1 justify-end">
-                  {entry.tags.map((tag, i) => (
-                    <Badge key={i} variant="outline" className="text-[10px]">{tag}</Badge>
-                  ))}
+            <h3 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Metadata</h3>
+            <div className="divide-y divide-border/60">
+              <MetaRow label="Entry type" value={entry.entry_type} />
+              <MetaRow label="Date" value={entry.entry_date} />
+              <MetaRow label="Source" value={entry.source} />
+              <MetaRow label="Channel" value={entry.source_channel} />
+              <MetaRow label="Location" value={entry.location} />
+              <MetaRow label="Mood" value={entry.mood} />
+              {entry.tags && entry.tags.length > 0 && (
+                <div className="flex justify-between items-start gap-4 py-2">
+                  <span className="text-sm text-muted-foreground shrink-0">Tags</span>
+                  <div className="flex flex-wrap gap-1 justify-end">
+                    {entry.tags.map((tag, i) => (
+                      <Badge key={i} variant="outline" className="text-[10px] px-2">{tag}</Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-            {entry.notes && (
-              <div className="py-1">
-                <span className="text-sm text-muted-foreground block mb-1">Notes</span>
-                <p className="text-sm whitespace-pre-line">{entry.notes}</p>
-              </div>
-            )}
+              )}
+              {entry.notes && (
+                <div className="py-3">
+                  <span className="text-sm text-muted-foreground block mb-2">Notes</span>
+                  <p className="text-sm whitespace-pre-line leading-relaxed">{entry.notes}</p>
+                </div>
+              )}
+            </div>
           </section>
 
           {entry.source_file && (
             <>
               <Separator />
               <section>
-                <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Source file</h3>
-                <p className="text-xs text-muted-foreground break-all mb-2">{entry.source_file}</p>
+                <h3 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Source file</h3>
+                <p className="text-xs text-muted-foreground break-all mb-3 leading-relaxed">{entry.source_file}</p>
                 {vaultName ? (
                   <Button
                     asChild
                     size="sm"
                     variant="outline"
-                    className="h-7 text-xs gap-1.5"
+                    className="h-8 text-xs gap-1.5"
                   >
                     <a
                       href={`obsidian://open?vault=${encodeURIComponent(vaultName)}&file=${encodeURIComponent(entry.source_file)}`}
@@ -142,7 +148,7 @@ export function EntryDetailPanel({ entry, open, onClose }: Props) {
                     </a>
                   </Button>
                 ) : (
-                  <p className="text-[10px] text-muted-foreground">Set vault name in ⚙ Settings to enable Obsidian links.</p>
+                  <p className="text-[11px] text-muted-foreground">Set vault name in ⚙ Settings to enable Obsidian links.</p>
                 )}
               </section>
             </>
@@ -152,25 +158,27 @@ export function EntryDetailPanel({ entry, open, onClose }: Props) {
 
           {/* Confidence + Review */}
           <section>
-            <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Confidence &amp; Review</h3>
-            <div className="flex justify-between items-center py-1">
-              <span className="text-sm text-muted-foreground">Confidence</span>
-              <Badge variant={confidenceVariant} className="text-xs">
-                {confidenceLabel} ({formatNumber(displayedConfidence, 2)})
-              </Badge>
+            <h3 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Confidence &amp; Review</h3>
+            <div className="divide-y divide-border/60">
+              <div className="flex justify-between items-center py-2.5">
+                <span className="text-sm text-muted-foreground">Confidence</span>
+                <Badge variant={confidenceVariant} className="text-xs">
+                  {confidenceLabel} ({formatNumber(displayedConfidence, 2)})
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center py-2.5">
+                <span className="text-sm text-muted-foreground">Status</span>
+                <Badge variant={entry.needs_review ? 'destructive' : 'secondary'} className="text-xs">
+                  {entry.needs_review ? 'Needs review' : entry.review_status}
+                </Badge>
+              </div>
+              {entry.reviewed_by && (
+                <MetaRow label="Reviewed by" value={entry.reviewed_by} />
+              )}
+              {entry.reviewed_at && (
+                <MetaRow label="Reviewed at" value={entry.reviewed_at} />
+              )}
             </div>
-            <div className="flex justify-between items-center py-1">
-              <span className="text-sm text-muted-foreground">Status</span>
-              <Badge variant={entry.needs_review ? 'destructive' : 'secondary'} className="text-xs">
-                {entry.needs_review ? 'Needs review' : entry.review_status}
-              </Badge>
-            </div>
-            {entry.reviewed_by && (
-              <MetaRow label="Reviewed by" value={entry.reviewed_by} />
-            )}
-            {entry.reviewed_at && (
-              <MetaRow label="Reviewed at" value={entry.reviewed_at} />
-            )}
           </section>
         </div>
       </SheetContent>

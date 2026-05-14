@@ -154,6 +154,7 @@ export function MealTypeChart({ entries, height = 260 }: Props) {
                 tickFormatter={(v) => `${v}`}
               />
               <Tooltip
+                cursor={{ fill: 'transparent' }}
                 contentStyle={{
                   backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',

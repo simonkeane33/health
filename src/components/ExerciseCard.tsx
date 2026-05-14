@@ -41,9 +41,15 @@ export function ExerciseCard({ entries }: ExerciseCardProps) {
   }
 
   const latest = entries[0];
+
+  // Scope totals to last 30 days — cumulative since 2017 is misleading
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+  const recent = entries.filter((e) => new Date(e.entry_date + 'T00:00:00') >= cutoff);
+
   const totalActivities = entries.length;
-  const totalDistance = entries.reduce((acc, e) => acc + (e.distance_km ?? 0), 0);
-  const totalCalories = entries.reduce((acc, e) => acc + (e.calories_burned ?? 0), 0);
+  const recentDistance = recent.reduce((acc, e) => acc + (e.distance_km ?? 0), 0);
+  const recentCalories = recent.reduce((acc, e) => acc + (e.calories_burned ?? 0), 0);
 
   return (
     <Card>
@@ -66,13 +72,13 @@ export function ExerciseCard({ entries }: ExerciseCardProps) {
           </div>
           <div>
             <div className="text-xs font-medium uppercase text-muted-foreground">Distance</div>
-            <strong className="block text-lg tabular-nums">{totalDistance.toFixed(1)} km</strong>
-            <p className="text-xs text-muted-foreground">Total recorded</p>
+            <strong className="block text-lg tabular-nums">{recentDistance.toFixed(1)} km</strong>
+            <p className="text-xs text-muted-foreground">Last 30 days · {recent.length} sessions</p>
           </div>
           <div>
             <div className="text-xs font-medium uppercase text-muted-foreground">Calories</div>
-            <strong className="block text-lg tabular-nums">{totalCalories.toLocaleString()} kcal</strong>
-            <p className="text-xs text-muted-foreground">Burned total</p>
+            <strong className="block text-lg tabular-nums">{Math.round(recentCalories).toLocaleString()} kcal</strong>
+            <p className="text-xs text-muted-foreground">Burned · last 30 days</p>
           </div>
           <div>
             <div className="text-xs font-medium uppercase text-muted-foreground">Duration</div>

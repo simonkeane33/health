@@ -19,14 +19,35 @@ interface MetricRow {
   lowerIsBetter?: boolean;
 }
 
-function hitTarget(value: number | undefined, target: number, lowerIsBetter = false): boolean | null {
+/**
+ * Returns:
+ *   true  = target was hit
+ *   false = target was missed (and the day is complete)
+ *   null  = unknown — either no value yet, or it's today and target isn't hit yet (so still in play)
+ */
+function hitTarget(
+  value: number | undefined,
+  target: number,
+  lowerIsBetter = false,
+  isToday = false,
+): boolean | null {
   if (value == null || value === 0) return null;
-  return lowerIsBetter ? value <= target * 1.05 : value >= target * 0.95;
+  const hit = lowerIsBetter ? value <= target * 1.05 : value >= target * 0.95;
+  // For today, don't fail until the day is over — show neutral if not yet hit
+  if (!hit && isToday) return null;
+  return hit;
 }
 
-function DayDot({ hit }: { hit: boolean | null }) {
+function DayDot({ hit, isToday }: { hit: boolean | null; isToday: boolean }) {
   if (hit === null) {
-    return <span className="inline-block h-5 w-5 rounded-full bg-muted border border-border" />;
+    return (
+      <span
+        className={`inline-block h-5 w-5 rounded-full ${
+          isToday ? 'bg-primary/10 border border-primary/40' : 'bg-muted border border-border'
+        }`}
+        title={isToday ? 'In progress — target not yet hit' : 'No data'}
+      />
+    );
   }
   if (hit) {
     return <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0" />;
@@ -36,7 +57,8 @@ function DayDot({ hit }: { hit: boolean | null }) {
 
 export function WeeklyAdherenceCard({ summaries, days = 7 }: Props) {
   const { targets } = useTargets();
-  const { rows, dateLabels } = useMemo(() => {
+  const { rows, dateLabels, todayFlags } = useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
     const sorted = [...summaries]
       .sort((a, b) => b.entry_date.localeCompare(a.entry_date))
       .slice(0, days)
@@ -46,6 +68,7 @@ export function WeeklyAdherenceCard({ summaries, days = 7 }: Props) {
       const d = new Date(s.entry_date + 'T00:00:00');
       return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
     });
+    const todayFlags = sorted.map((s) => s.entry_date === todayStr);
 
     const metrics: MetricRow[] = [
       {
@@ -68,7 +91,7 @@ export function WeeklyAdherenceCard({ summaries, days = 7 }: Props) {
       },
     ];
 
-    return { rows: metrics, dateLabels: labels };
+    return { rows: metrics, dateLabels: labels, todayFlags };
   }, [summaries, days, targets]);
 
   if (summaries.length === 0) {
@@ -97,10 +120,11 @@ export function WeeklyAdherenceCard({ summaries, days = 7 }: Props) {
             </thead>
             <tbody className="divide-y divide-border">
               {rows.map((row) => {
-                const hits = row.values.map((v) => hitTarget(v, row.target, row.lowerIsBetter));
-                const counted = hits.filter((h) => h !== null);
-                const passed = counted.filter(Boolean).length;
-                const pct = counted.length > 0 ? Math.round((passed / counted.length) * 100) : null;
+                const hits = row.values.map((v, i) => hitTarget(v, row.target, row.lowerIsBetter, todayFlags[i]));
+                // Exclude today from the hit-rate calc — it's still in progress
+                const completed = hits.filter((h, i) => h !== null && !todayFlags[i]);
+                const passed = completed.filter(Boolean).length;
+                const pct = completed.length > 0 ? Math.round((passed / completed.length) * 100) : null;
                 const pctColor =
                   pct == null
                     ? 'text-muted-foreground'
@@ -121,7 +145,7 @@ export function WeeklyAdherenceCard({ summaries, days = 7 }: Props) {
                     {hits.map((hit, i) => (
                       <td key={i} className="py-2 px-1 text-center">
                         <div className="flex justify-center">
-                          <DayDot hit={hit} />
+                          <DayDot hit={hit} isToday={todayFlags[i]} />
                         </div>
                       </td>
                     ))}

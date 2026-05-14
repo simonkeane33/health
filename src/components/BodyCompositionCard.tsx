@@ -9,13 +9,20 @@ interface Props {
 }
 
 export function BodyCompositionCard({ summaries }: Props) {
-  const latest = summaries[0];
+  // Find the most recent summary that actually has body composition data —
+  // today's summary may only have weight (no body comp scan yet) which leaves
+  // body_water_pct etc. undefined and shows as 0/—.
+  const hasBodyComp = (s: DailySummary) =>
+    s.body_fat_pct != null ||
+    s.muscle_mass_pct != null ||
+    s.bone_mass_pct != null ||
+    s.body_water_pct != null;
+  const latest = summaries.find(hasBodyComp);
   if (!latest) return null;
 
-  const hasData = latest.body_fat_pct != null || latest.muscle_mass_pct != null || latest.bone_mass_pct != null || latest.bmi != null || latest.body_water_pct != null;
-  if (!hasData) return null;
-
-  const prev = summaries[1];
+  // Previous = next summary back from `latest` that has body comp
+  const latestIdx = summaries.indexOf(latest);
+  const prev = summaries.slice(latestIdx + 1).find(hasBodyComp);
 
   return (
     <Card>

@@ -139,3 +139,9 @@ body {
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  /* Hide scrollbar on the sticky section nav (keeps scroll behaviour) */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}

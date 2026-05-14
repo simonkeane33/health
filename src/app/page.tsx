@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { FolderOpen } from 'lucide-react';
+import { FolderOpen, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -37,6 +37,8 @@ import { WeeklyAdherenceCard } from '@/components/WeeklyAdherenceCard';
 import { DataHealthCard } from '@/components/DataHealthCard';
 import { TrendInsightStrip } from '@/components/TrendInsightStrip';
 import { MealTypeChart } from '@/components/MealTypeChart';
+import { WeekdayPatternsCard } from '@/components/WeekdayPatternsCard';
+import { SectionNav } from '@/components/SectionNav';
 import { TargetsSheet } from '@/components/TargetsSheet';
 import { TargetsProvider, useTargets } from '@/lib/targets-context';
 import { DEFAULT_TARGETS } from '@/lib/targets';
@@ -77,7 +79,7 @@ export default function Home() {
 }
 
 function HomeInner() {
-  const { data, loading, error, progress, supportsDirectoryPicker, savedVaultName, reconnectNeeded, reconnect, openDirectoryPicker, loadFiles, clearData } = useVaultData();
+  const { data, loading, error, progress, supportsDirectoryPicker, savedVaultName, reconnectNeeded, reconnect, refresh, openDirectoryPicker, loadFiles, clearData } = useVaultData();
   const { setTargets } = useTargets();
   const [intakeRange, setIntakeRange] = useState<RangeValue>('30');
   const [weightRange, setWeightRange] = useState<RangeValue>('30');
@@ -161,17 +163,30 @@ function HomeInner() {
           ) : null}
 
           {data && !loading && (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="text-muted-foreground hover:text-foreground"
-              onClick={clearData}
-              title="Disconnect vault"
-            >
-              <FolderOpen className="mr-1 h-4 w-4" />
-              {savedVaultName ?? 'Vault'} ✕
-            </Button>
+            <>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={refresh}
+                title="Re-scan vault for new entries"
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span className="sr-only">Refresh</span>
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={clearData}
+                title="Disconnect vault"
+              >
+                <FolderOpen className="mr-1 h-4 w-4" />
+                {savedVaultName ?? 'Vault'} ✕
+              </Button>
+            </>
           )}
 
           <TargetsSheet />
@@ -245,93 +260,97 @@ function HomeInner() {
         )}
         {data && (
           <>
-            {/* KPIs */}
-            <KpiGrid data={data} />
+            <SectionNav />
 
-            {/* Trend insight strip */}
-            <TrendInsightStrip summaries={data.dailySummaries} range={combinedRange} />
+            {/* TODAY: KPIs, adherence, data health */}
+            <section id="today" className="flex flex-col gap-4 scroll-mt-20">
+              <KpiGrid data={data} />
+              <TrendInsightStrip summaries={data.dailySummaries} range={combinedRange} />
+              <WeeklyAdherenceCard summaries={data.dailySummaries} />
+              <DataHealthCard data={data} />
+              <BodyCompositionCard summaries={data.dailySummaries} />
+            </section>
 
-            {/* Weekly adherence */}
-            <WeeklyAdherenceCard summaries={data.dailySummaries} />
-
-            {/* Data health — collapsible, auto-opens on errors */}
-            <DataHealthCard data={data} />
-
-            {/* Body Composition */}
-            <BodyCompositionCard summaries={data.dailySummaries} />
-
-            {/* Combined Calories + Weight Trend — full width */}
-            <Card className="flex flex-col">
-              <CardHeader className="flex flex-row items-center justify-between gap-4">
-                <div>
-                  <CardDescription>Trend</CardDescription>
-                  <CardTitle>Calories & Weight</CardTitle>
-                </div>
-                <RangeFilter value={combinedRange} onChange={setCombinedRange} />
-              </CardHeader>
-              <CardContent className="flex-1">
-                <CombinedCaloriesWeightChart summaries={data.dailySummaries} range={combinedRange} />
-              </CardContent>
-            </Card>
-
-            {/* Charts — side by side, each with its own range filter */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Card className="flex flex-col">
-                <CardHeader className="flex flex-row items-center justify-between gap-4">
-                  <div>
-                    <CardDescription>Intake</CardDescription>
-                    <CardTitle>Calories</CardTitle>
-                  </div>
-                  <RangeFilter value={intakeRange} onChange={setIntakeRange} />
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <IntakeTrendChart summaries={data.dailySummaries} range={intakeRange} />
-                </CardContent>
-              </Card>
-
+            {/* TRENDS: charts */}
+            <section id="trends" className="flex flex-col gap-4 scroll-mt-20">
               <Card className="flex flex-col">
                 <CardHeader className="flex flex-row items-center justify-between gap-4">
                   <div>
                     <CardDescription>Trend</CardDescription>
-                    <CardTitle>Weight</CardTitle>
+                    <CardTitle>Calories & Weight</CardTitle>
                   </div>
-                  <RangeFilter value={weightRange} onChange={setWeightRange} />
+                  <RangeFilter value={combinedRange} onChange={setCombinedRange} />
                 </CardHeader>
                 <CardContent className="flex-1">
-                  <WeightTrendChart summaries={data.dailySummaries} range={weightRange} />
+                  <CombinedCaloriesWeightChart summaries={data.dailySummaries} range={combinedRange} />
                 </CardContent>
               </Card>
-            </div>
 
-            {/* Exercise — full width below chart */}
-            <ExerciseCard entries={data.exerciseEntries} />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Card className="flex flex-col">
+                  <CardHeader className="flex flex-row items-center justify-between gap-4">
+                    <div>
+                      <CardDescription>Intake</CardDescription>
+                      <CardTitle>Calories</CardTitle>
+                    </div>
+                    <RangeFilter value={intakeRange} onChange={setIntakeRange} />
+                  </CardHeader>
+                  <CardContent className="flex-1">
+                    <IntakeTrendChart summaries={data.dailySummaries} range={intakeRange} />
+                  </CardContent>
+                </Card>
 
-            {/* Tables section — full width, stacked vertically */}
-            <div className="flex flex-col gap-4">
+                <Card className="flex flex-col">
+                  <CardHeader className="flex flex-row items-center justify-between gap-4">
+                    <div>
+                      <CardDescription>Trend</CardDescription>
+                      <CardTitle>Weight</CardTitle>
+                    </div>
+                    <RangeFilter value={weightRange} onChange={setWeightRange} />
+                  </CardHeader>
+                  <CardContent className="flex-1">
+                    <WeightTrendChart summaries={data.dailySummaries} range={weightRange} />
+                  </CardContent>
+                </Card>
+              </div>
+            </section>
+
+            {/* ACTIVITY */}
+            <section id="activity" className="flex flex-col gap-4 scroll-mt-20">
+              <ExerciseCard entries={data.exerciseEntries} />
+            </section>
+
+            {/* ENTRIES */}
+            <section id="entries" className="flex flex-col gap-4 scroll-mt-20">
               <RecentEntries entries={data.foodEntries} />
               <DailySummaries entries={data.dailySummaries} />
-            </div>
+            </section>
 
-            {/* Macro + meal-type breakdown — side by side */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <WeeklyMacroChart summaries={data.dailySummaries} />
-              <MealTypeChart entries={data.foodEntries} />
-            </div>
+            {/* PATTERNS */}
+            <section id="patterns" className="flex flex-col gap-4 scroll-mt-20">
+              <WeekdayPatternsCard summaries={data.dailySummaries} />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <WeeklyMacroChart summaries={data.dailySummaries} />
+                <MealTypeChart entries={data.foodEntries} />
+              </div>
+            </section>
 
-            {/* Bottom row — Review, patterns, rankings, macros */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-4">
-                <ReviewQueue entries={data.foodEntries} />
-                <DailyMacroCard summary={data.dailySummaries[0]} />
-                <FoodVsDrinkCard entries={data.foodEntries} />
-                <FrequentFoods entries={data.foodEntries} />
+            {/* REVIEW */}
+            <section id="review" className="flex flex-col gap-4 scroll-mt-20">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-4">
+                  <ReviewQueue entries={data.foodEntries} />
+                  <DailyMacroCard summary={data.dailySummaries[0]} />
+                  <FoodVsDrinkCard entries={data.foodEntries} />
+                  <FrequentFoods entries={data.foodEntries} />
+                </div>
+                <div className="flex flex-col gap-4">
+                  <RecurringFoodsPanel entries={data.foodEntries} />
+                  <RecurringDrinksPanel entries={data.foodEntries} />
+                  <HighestCalorieItems entries={data.foodEntries} />
+                </div>
               </div>
-              <div className="flex flex-col gap-4">
-                <RecurringFoodsPanel entries={data.foodEntries} />
-                <RecurringDrinksPanel entries={data.foodEntries} />
-                <HighestCalorieItems entries={data.foodEntries} />
-              </div>
-            </div>
+            </section>
 
             {/* Footer info */}
             <div className="flex items-center justify-between text-xs text-muted-foreground py-2">

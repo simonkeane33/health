@@ -334,12 +334,18 @@ source: hermes
 | **Fluids (water)** | **2,500 ml** | Active hydration goal |
 `;
 
-  it('extracts calories, protein, and fluids from active targets table', () => {
+  it('extracts calories, protein, carbs, and fluids from active targets table', () => {
     const targets = parseTargetsConfig(sampleTargetsFile);
     expect(targets).not.toBeNull();
     expect(targets?.calories_kcal).toBe(1974);
     expect(targets?.protein_g).toBe(150);
     expect(targets?.fluids_ml).toBe(2500);
+  });
+
+  it('extracts carbs target from active targets table', () => {
+    const text = `---\nentry_type: config\nid: health-targets\n---\n| **Carbs** | **165 g** | Remainder after protein and fat |\n`;
+    const targets = parseTargetsConfig(text);
+    expect(targets?.carbs_g).toBe(165);
   });
 
   it('returns null for non-config entry_type', () => {

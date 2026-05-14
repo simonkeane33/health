@@ -114,13 +114,50 @@ function normalizeFields(data: Record<string, unknown>): Record<string, unknown>
   return out;
 }
 
+/**
+ * Normalize alt body-composition field names that newer Hermes versions emit.
+ * `muscle_pct` → `muscle_mass_pct` etc.
+ */
+function normalizeBodyCompFields(data: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...data };
+  const aliases: Array<[from: string, to: string]> = [
+    ['muscle_pct', 'muscle_mass_pct'],
+    ['bone_pct', 'bone_mass_pct'],
+    ['water_pct', 'body_water_pct'],
+  ];
+  for (const [from, to] of aliases) {
+    if (out[to] === undefined && out[from] !== undefined) out[to] = out[from];
+  }
+  return out;
+}
+
+/**
+ * Normalize alt total_X_g daily-summary field names → canonical X_g.
+ */
+function normalizeDailySummaryFields(data: Record<string, unknown>): Record<string, unknown> {
+  const out = normalizeBodyCompFields(data);
+  const aliases: Array<[from: string, to: string]> = [
+    ['total_protein_g', 'protein_g'],
+    ['total_carbs_g', 'carbs_g'],
+    ['total_fat_g', 'fat_g'],
+    ['total_fiber_g', 'fiber_g'],
+    ['total_sugar_g', 'sugar_g'],
+    ['total_fluids_ml', 'fluids_ml'],
+    ['total_alcohol_units', 'alcohol_units'],
+  ];
+  for (const [from, to] of aliases) {
+    if (out[to] === undefined && out[from] !== undefined) out[to] = out[from];
+  }
+  return out;
+}
+
 export function parseVaultEntry(data: Record<string, unknown>): VaultEntry | null {
   const entryType = data.entry_type;
   if (entryType === 'food' || entryType === 'food_entry') {
     return parseFoodEntry(normalizeFields(data));
   }
-  if (entryType === 'weight_entry') return parseWeightEntry(data);
-  if (entryType === 'daily_summary') return parseDailySummary(data);
+  if (entryType === 'weight_entry') return parseWeightEntry(normalizeBodyCompFields(data));
+  if (entryType === 'daily_summary') return parseDailySummary(normalizeDailySummaryFields(data));
   if (entryType === 'exercise_entry') return parseExerciseEntry(data);
   console.warn('[parseVaultEntry] Unknown entry_type:', entryType);
   return null;
@@ -194,6 +231,10 @@ export function parseTargetsConfig(text: string): Partial<DailyTargets> | null {
   const protein = extractNum(/\|\s*\*{1,2}Protein\*{1,2}\s*\|\s*\*{1,2}([\d,]+)\s*g\*{1,2}/i);
   if (protein != null) result.protein_g = protein;
 
+  // | **Carbs** | **165 g** |
+  const carbs = extractNum(/\|\s*\*{1,2}Carbs\*{1,2}\s*\|\s*\*{1,2}([\d,]+)\s*g\*{1,2}/i);
+  if (carbs != null) result.carbs_g = carbs;
+
   // | **Fluids (water)** | **2,500 ml** | — also matches plain "Fluids"
   const fluids = extractNum(/\|\s*\*{1,2}Fluids[^|]*\|\s*\*{1,2}([\d,]+)\s*ml\*{1,2}/i);
   if (fluids != null) result.fluids_ml = fluids;
@@ -215,13 +256,28 @@ export function parseVaultFile(name: string, text: string): VaultEntry | null {
   const entry = parseVaultEntry(frontmatter);
   if (!entry) return null;
 
-  // For food entries, stamp source_file and scan body for image attachments
+  // For food entries, stamp source_file and collect image attachments
   if (entry.entry_type === 'food_entry') {
-    const attachments = extractAttachmentsFromBody(text);
+    const bodyAttachments = extractAttachmentsFromBody(text);
+
+    // Also pull paths from frontmatter `image` field (array of {path, description} objects)
+    const fmImage = frontmatter.image;
+    const frontmatterPaths: string[] = Array.isArray(fmImage)
+      ? fmImage.flatMap((item) =>
+          item && typeof item === 'object' && 'path' in item && typeof (item as Record<string, unknown>).path === 'string'
+            ? [(item as Record<string, unknown>).path as string]
+            : [],
+        )
+      : typeof fmImage === 'string' && fmImage
+        ? [fmImage]
+        : [];
+
+    const allAttachments = [...new Set([...bodyAttachments, ...frontmatterPaths])];
+
     return {
       ...entry,
       source_file: name,
-      ...(attachments.length > 0 ? { attachments } : {}),
+      ...(allAttachments.length > 0 ? { attachments: allAttachments } : {}),
     } as VaultEntry;
   }
 
