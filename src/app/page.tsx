@@ -90,8 +90,8 @@ function HomeInner() {
   const [editingEntry, setEditingEntry] = useState<FoodEntry | null>(null);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
 
-  const handleConfirm = useCallback(async (id: string) => {
-    await confirmEntry(id);
+  const handleConfirm = useCallback(async (id: string): Promise<string> => {
+    return confirmEntry(id);
   }, [confirmEntry]);
 
   const handleEdit = useCallback((id: string) => {

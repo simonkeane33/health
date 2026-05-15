@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { AlertCircle, Check, Pencil } from 'lucide-react';
+import { AlertCircle, Check, Pencil, Loader2 } from 'lucide-react';
 import type { FoodEntry } from '@/lib/types';
 import { formatDateTime } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -13,7 +13,7 @@ const LOW_CONFIDENCE_THRESHOLD = 0.8;
 interface Props {
   entries: FoodEntry[];
   limit?: number;
-  onConfirm?: (id: string) => void;
+  onConfirm?: (id: string) => Promise<string>;
   onEdit?: (id: string) => void;
 }
 
@@ -31,23 +31,37 @@ function NoItems() {
   );
 }
 
+const CONFIRM_ERRORS: Record<string, string> = {
+  'no-handle': 'No vault connected.',
+  'no-file':   'File not found in vault.',
+  'no-write':  'Write permission denied — reconnect the vault.',
+  'patch-fail':'Could not update file.',
+};
+
 function ReviewItem({
   entry,
   onConfirm,
   onEdit,
 }: {
   entry: FoodEntry;
-  onConfirm?: () => void;
+  onConfirm?: () => Promise<string>;
   onEdit?: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState<string>('');
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (!onConfirm) return;
     setConfirming(true);
-    setTimeout(() => {
+    setConfirmError('');
+    try {
+      const result = await onConfirm();
+      if (result !== 'ok') {
+        setConfirmError(CONFIRM_ERRORS[result] ?? 'Unknown error.');
+      }
+    } finally {
       setConfirming(false);
-      onConfirm?.();
-    }, 300);
+    }
   };
 
   const isLowConfidence = Number(entry.confidence) < LOW_CONFIDENCE_THRESHOLD;
@@ -75,6 +89,9 @@ function ReviewItem({
             <Badge variant="secondary">Confirmed</Badge>
           )}
         </div>
+        {confirmError && (
+          <p className="text-[11px] text-destructive mt-1.5">{confirmError}</p>
+        )}
       </div>
       <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
         <Button
@@ -86,7 +103,9 @@ function ReviewItem({
           title="Confirm"
           className="h-7 w-7 rounded-full"
         >
-          <Check className="w-3.5 h-3.5" />
+          {confirming
+            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            : <Check className="w-3.5 h-3.5" />}
         </Button>
         <Button
           size="icon-sm"
@@ -140,7 +159,7 @@ export function ReviewQueue({ entries, limit = 6, onConfirm, onEdit }: Props) {
             <ReviewItem
               key={entry.id}
               entry={entry}
-              onConfirm={() => onConfirm?.(entry.id)}
+              onConfirm={onConfirm ? () => onConfirm(entry.id) : undefined}
               onEdit={() => onEdit?.(entry.id)}
             />
           ))}

@@ -256,6 +256,15 @@ export function useVaultData() {
     const handle = savedHandleRef.current;
     if (!handle || !data) return 'no-handle';
 
+    // Ensure we have write permission — request upgrade if handle was saved read-only
+    try {
+      // @ts-expect-error — requestPermission is in the WICG File System Access spec
+      const perm = await handle.requestPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') return 'no-write';
+    } catch {
+      return 'no-write';
+    }
+
     const entry = data.foodEntries.find((e) => e.id === entryId);
     if (!entry?.source_file) return 'no-file';
 
@@ -300,6 +309,15 @@ export function useVaultData() {
   const editEntry = useCallback(async (entryId: string, patches: Record<string, unknown>): Promise<'ok' | 'no-handle' | 'no-file' | 'no-write' | 'patch-fail'> => {
     const handle = savedHandleRef.current;
     if (!handle || !data) return 'no-handle';
+
+    // Ensure write permission
+    try {
+      // @ts-expect-error — requestPermission is in the WICG File System Access spec
+      const perm = await handle.requestPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') return 'no-write';
+    } catch {
+      return 'no-write';
+    }
 
     const entry = data.foodEntries.find((e) => e.id === entryId);
     if (!entry?.source_file) return 'no-file';
