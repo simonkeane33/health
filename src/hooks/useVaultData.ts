@@ -7,6 +7,7 @@ import { aggregateDailySummaries } from '@/lib/aggregator';
 import type { FoodEntry, WeightEntry, DailySummary, ExerciseEntry } from '@/lib/schemas';
 import type { VaultData } from '@/lib/types';
 import { saveVaultHandle, loadVaultHandle, clearVaultHandle } from '@/lib/vault-store';
+import { patchFrontmatter, navigateToFile } from '@/lib/vault-write';
 
 export type { VaultData };
 
@@ -162,7 +163,7 @@ export function useVaultData() {
       setSavedVaultName(handle.name);
 
       // @ts-expect-error — queryPermission is in the WICG spec
-      const perm = await handle.queryPermission({ mode: 'read' });
+      const perm = await handle.queryPermission({ mode: 'readwrite' });
       if (perm === 'granted') {
         // Permission still held from this session — load silently
         await loadFromHandle(handle);
@@ -180,7 +181,7 @@ export function useVaultData() {
 
     try {
       // @ts-expect-error — requestPermission is in the WICG spec
-      const perm = await handle.requestPermission({ mode: 'read' });
+      const perm = await handle.requestPermission({ mode: 'readwrite' });
       if (perm === 'granted') {
         await loadFromHandle(handle);
       } else {
@@ -209,7 +210,7 @@ export function useVaultData() {
 
     try {
       // @ts-expect-error — showDirectoryPicker may lag in TS types
-      const dirHandle: FileSystemDirectoryHandle = await window.showDirectoryPicker({ mode: 'read' });
+      const dirHandle: FileSystemDirectoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
       savedHandleRef.current = dirHandle;
       setSavedVaultName(dirHandle.name);
       setReconnectNeeded(false);
@@ -250,6 +251,87 @@ export function useVaultData() {
     }
   }, []);
 
+  /* ── Confirm: mark a food entry as reviewed in the vault file ── */
+  const confirmEntry = useCallback(async (entryId: string): Promise<'ok' | 'no-handle' | 'no-file' | 'no-write' | 'patch-fail'> => {
+    const handle = savedHandleRef.current;
+    if (!handle || !data) return 'no-handle';
+
+    const entry = data.foodEntries.find((e) => e.id === entryId);
+    if (!entry?.source_file) return 'no-file';
+
+    const fileHandle = await navigateToFile(handle, entry.source_file);
+    if (!fileHandle) return 'no-file';
+
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+
+    const now = new Date().toISOString();
+    const patched = patchFrontmatter(text, {
+      needs_review: false,
+      user_confirmed: true,
+      review_status: 'confirmed',
+      reviewed_at: now,
+    });
+    if (!patched) return 'patch-fail';
+
+    try {
+      const writable = await fileHandle.createWritable();
+      await writable.write(patched);
+      await writable.close();
+    } catch {
+      return 'no-write';
+    }
+
+    // Optimistic update — remove from review queue immediately
+    setData((prev) => {
+      if (!prev) return prev;
+      const updatedFood = prev.foodEntries.map((e) =>
+        e.id === entryId
+          ? { ...e, needs_review: false, user_confirmed: true, review_status: 'confirmed', reviewed_at: now }
+          : e
+      );
+      return { ...prev, foodEntries: updatedFood };
+    });
+
+    return 'ok';
+  }, [data]);
+
+  /* ── Edit: patch arbitrary fields on a food entry in the vault file ── */
+  const editEntry = useCallback(async (entryId: string, patches: Record<string, unknown>): Promise<'ok' | 'no-handle' | 'no-file' | 'no-write' | 'patch-fail'> => {
+    const handle = savedHandleRef.current;
+    if (!handle || !data) return 'no-handle';
+
+    const entry = data.foodEntries.find((e) => e.id === entryId);
+    if (!entry?.source_file) return 'no-file';
+
+    const fileHandle = await navigateToFile(handle, entry.source_file);
+    if (!fileHandle) return 'no-file';
+
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+
+    const patched = patchFrontmatter(text, patches);
+    if (!patched) return 'patch-fail';
+
+    try {
+      const writable = await fileHandle.createWritable();
+      await writable.write(patched);
+      await writable.close();
+    } catch {
+      return 'no-write';
+    }
+
+    setData((prev) => {
+      if (!prev) return prev;
+      const updatedFood = prev.foodEntries.map((e) =>
+        e.id === entryId ? { ...e, ...patches } : e
+      );
+      return { ...prev, foodEntries: updatedFood };
+    });
+
+    return 'ok';
+  }, [data]);
+
   const clearData = useCallback(async () => {
     setData(null);
     setReconnectNeeded(false);
@@ -271,5 +353,7 @@ export function useVaultData() {
     openDirectoryPicker,
     loadFiles,
     clearData,
+    confirmEntry,
+    editEntry,
   };
 }

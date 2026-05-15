@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { FolderOpen, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -43,6 +43,8 @@ import { TargetsSheet } from '@/components/TargetsSheet';
 import { TargetsProvider, useTargets } from '@/lib/targets-context';
 import { DEFAULT_TARGETS } from '@/lib/targets';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { EntryEditSheet } from '@/components/EntryEditSheet';
+import type { FoodEntry } from '@/lib/types';
 
 type RangeValue = '7' | '14' | '30' | '90' | '365' | 'all';
 
@@ -79,12 +81,24 @@ export default function Home() {
 }
 
 function HomeInner() {
-  const { data, loading, error, progress, supportsDirectoryPicker, savedVaultName, reconnectNeeded, reconnect, refresh, openDirectoryPicker, loadFiles, clearData } = useVaultData();
+  const { data, loading, error, progress, supportsDirectoryPicker, savedVaultName, reconnectNeeded, reconnect, refresh, openDirectoryPicker, loadFiles, clearData, confirmEntry, editEntry: editEntryFn } = useVaultData();
   const { setTargets } = useTargets();
   const [intakeRange, setIntakeRange] = useState<RangeValue>('30');
   const [weightRange, setWeightRange] = useState<RangeValue>('30');
   const [combinedRange, setCombinedRange] = useState<RangeValue>('30');
   const inputRef = useRef<HTMLInputElement>(null);
+  const [editingEntry, setEditingEntry] = useState<FoodEntry | null>(null);
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
+
+  const handleConfirm = useCallback(async (id: string) => {
+    await confirmEntry(id);
+  }, [confirmEntry]);
+
+  const handleEdit = useCallback((id: string) => {
+    const entry = data?.foodEntries.find((e) => e.id === id) ?? null;
+    setEditingEntry(entry);
+    setEditSheetOpen(true);
+  }, [data]);
 
   // Sync vault-parsed targets into context whenever data loads
   useEffect(() => {
@@ -339,7 +353,7 @@ function HomeInner() {
             <section id="review" className="flex flex-col gap-4 scroll-mt-20">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-4">
-                  <ReviewQueue entries={data.foodEntries} />
+                  <ReviewQueue entries={data.foodEntries} onConfirm={handleConfirm} onEdit={handleEdit} />
                   <DailyMacroCard summary={data.dailySummaries[0]} />
                   <FoodVsDrinkCard entries={data.foodEntries} />
                   <FrequentFoods entries={data.foodEntries} />
@@ -359,6 +373,12 @@ function HomeInner() {
             </div>
           </>
         )}
+        <EntryEditSheet
+          entry={editingEntry}
+          open={editSheetOpen}
+          onClose={() => setEditSheetOpen(false)}
+          onSave={async (id, patches) => editEntryFn(id, patches as Record<string, unknown>)}
+        />
       </main>
     </div>
   );
