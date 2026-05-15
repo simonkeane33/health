@@ -122,13 +122,13 @@ export function EntryEditSheet({ entry, open, onClose, onSave }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto flex flex-col">
-        <SheetHeader>
+      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto flex flex-col px-6">
+        <SheetHeader className="px-0 pb-2">
           <SheetTitle>Edit entry</SheetTitle>
           <p className="text-xs text-muted-foreground truncate">{entry.items.join(', ')}</p>
         </SheetHeader>
 
-        <div className="flex-1 flex flex-col gap-6 py-4">
+        <div className="flex-1 flex flex-col gap-6 py-4 px-0">
           {/* Details */}
           <section className="flex flex-col gap-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Details</h3>
@@ -291,10 +291,10 @@ export function EntryEditSheet({ entry, open, onClose, onSave }: Props) {
         </div>
 
         {saveError && (
-          <p className="text-sm text-destructive px-1 pb-2">{saveError}</p>
+          <p className="text-sm text-destructive pb-2">{saveError}</p>
         )}
 
-        <SheetFooter className="gap-2 pt-2 border-t">
+        <SheetFooter className="gap-2 pt-4 pb-2 border-t px-0">
           <Button variant="outline" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
