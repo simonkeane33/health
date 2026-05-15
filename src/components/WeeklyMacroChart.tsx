@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useHasMounted } from '@/hooks/useHasMounted';
 import {
   BarChart,
   Bar,
@@ -102,6 +103,7 @@ interface Props {
 }
 
 export function WeeklyMacroChart({ summaries, height = 260 }: Props) {
+  const mounted = useHasMounted();
   const [range, setRange] = useState<RangeValue>('7');
   const [view, setView] = useState<ViewMode>('grams');
 
@@ -165,7 +167,9 @@ export function WeeklyMacroChart({ summaries, height = 260 }: Props) {
       </CardHeader>
       <CardContent className="flex-1">
         <ChartContainer config={chartConfig} style={{ height }} className="w-full aspect-auto">
-          <ResponsiveContainer width="100%" height="100%">
+          {!mounted ? (
+            <div className="rounded-lg animate-pulse bg-muted/20 w-full" style={{ height }} />
+          ) : <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
               margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
@@ -199,7 +203,7 @@ export function WeeklyMacroChart({ summaries, height = 260 }: Props) {
                 />
               ))}
             </BarChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer>}
         </ChartContainer>
       </CardContent>
     </Card>

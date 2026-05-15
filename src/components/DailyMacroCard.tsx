@@ -6,6 +6,7 @@ import type { DailySummary } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { computeMacroPercentages } from '@/lib/aggregator';
 import { Apple } from 'lucide-react';
+import { useHasMounted } from '@/hooks/useHasMounted';
 
 const COLORS = ['#34d399', '#fbbf24', '#a78bfa']; // protein, carbs, fat
 
@@ -23,6 +24,7 @@ function macroLabel(name: string) {
 }
 
 export function DailyMacroCard({ summary }: { summary?: DailySummary }) {
+  const mounted = useHasMounted();
   const data = useMemo(() => {
     if (!summary) return [];
     const pct = computeMacroPercentages(summary);
@@ -60,32 +62,36 @@ export function DailyMacroCard({ summary }: { summary?: DailySummary }) {
       <CardContent>
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className="shrink-0" style={{ width: 180, height: 180 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Tooltip
-                  formatter={(_value: unknown, _name: unknown, props: unknown) => {
-                    const p = props as { payload?: { grams?: number; pct?: number; name?: string } };
-                    const grams = p?.payload?.grams ?? 0;
-                    const pct = p?.payload?.pct ?? 0;
-                    return [`${grams}g (${pct}%)`, macroLabel(p?.payload?.name ?? '')];
-                  }}
-                />
-                <Pie
-                  data={data}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={45}
-                  outerRadius={75}
-                  dataKey="pct"
-                  nameKey="name"
-                  strokeWidth={0}
-                >
-                  {data.map((_entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
+            {mounted ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Tooltip
+                    formatter={(_value: unknown, _name: unknown, props: unknown) => {
+                      const p = props as { payload?: { grams?: number; pct?: number; name?: string } };
+                      const grams = p?.payload?.grams ?? 0;
+                      const pct = p?.payload?.pct ?? 0;
+                      return [`${grams}g (${pct}%)`, macroLabel(p?.payload?.name ?? '')];
+                    }}
+                  />
+                  <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={75}
+                    dataKey="pct"
+                    nameKey="name"
+                    strokeWidth={0}
+                  >
+                    {data.map((_entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="w-full h-full rounded-full animate-pulse bg-muted/20" />
+            )}
           </div>
           <div className="flex flex-col gap-2 text-xs w-full sm:w-auto">
             {data.map((d, i) => (

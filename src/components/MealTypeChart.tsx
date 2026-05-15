@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useHasMounted } from '@/hooks/useHasMounted';
 import {
   BarChart,
   Bar,
@@ -85,6 +86,7 @@ interface Props {
 }
 
 export function MealTypeChart({ entries, height = 260 }: Props) {
+  const mounted = useHasMounted();
   const [range, setRange] = useState<RangeValue>('30');
   const [metric, setMetric] = useState<MetricKey>('calories');
 
@@ -133,6 +135,8 @@ export function MealTypeChart({ entries, height = 260 }: Props) {
           >
             <p className="text-sm text-muted-foreground">No entry data for selected range.</p>
           </div>
+        ) : !mounted ? (
+          <div className="rounded-lg animate-pulse bg-muted/20" style={{ height }} />
         ) : (
           <ResponsiveContainer width="100%" height={height}>
             <BarChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }} barSize={8}>

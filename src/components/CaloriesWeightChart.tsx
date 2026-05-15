@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useHasMounted } from '@/hooks/useHasMounted';
 import {
   LineChart,
   Line,
@@ -82,6 +83,7 @@ function defaultActive(summaries: DailySummary[]): Set<NutrientKey> {
 }
 
 export function IntakeTrendChart({ summaries, range, height = 260 }: IntakeChartProps) {
+  const mounted = useHasMounted();
   const { targets } = useTargets();
   const [active, setActive] = useState<Set<NutrientKey>>(() => defaultActive(summaries));
 
@@ -185,7 +187,7 @@ export function IntakeTrendChart({ summaries, range, height = 260 }: IntakeChart
       </div>
 
       <ChartContainer config={chartConfig} style={{ height }} className="w-full aspect-auto">
-        <ResponsiveContainer width="100%" height="100%">
+        {!mounted ? <div className="w-full animate-pulse rounded bg-muted/20" style={{ height }} /> : <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 4, right: gramVisible ? 16 : 4, left: calorieVisible ? 4 : 16, bottom: 0 }}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
             <XAxis
@@ -263,7 +265,7 @@ export function IntakeTrendChart({ summaries, range, height = 260 }: IntakeChart
               />
             )}
           </LineChart>
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </ChartContainer>
     </div>
   );
@@ -278,6 +280,7 @@ interface Props {
 }
 
 export function WeightTrendChart({ summaries, range, height = 260 }: Props) {
+  const mounted = useHasMounted();
   const { targets } = useTargets();
   const data = useMemo(() => {
     const sorted = filterAndSort(summaries, range);
@@ -318,7 +321,7 @@ export function WeightTrendChart({ summaries, range, height = 260 }: Props) {
 
   return (
     <ChartContainer config={weightConfig} style={{ height }} className="w-full aspect-auto">
-      <ResponsiveContainer width="100%" height="100%">
+      {!mounted ? <div className="w-full animate-pulse rounded bg-muted/20" style={{ height }} /> : <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
           <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
           <XAxis
@@ -381,7 +384,7 @@ export function WeightTrendChart({ summaries, range, height = 260 }: Props) {
             label={{ value: 'Target', position: 'insideTopRight', fontSize: 10, fill: '#34d399' }}
           />
         </LineChart>
-      </ResponsiveContainer>
+      </ResponsiveContainer>}
     </ChartContainer>
   );
 }
@@ -407,6 +410,7 @@ interface CombinedTrendProps {
 }
 
 export function CombinedCaloriesWeightChart({ summaries, range, height = 260 }: CombinedTrendProps) {
+  const mounted = useHasMounted();
   const { data, trendText } = useMemo(() => {
     const filtered = filterAndSort(summaries, range);
 
@@ -482,7 +486,7 @@ export function CombinedCaloriesWeightChart({ summaries, range, height = 260 }: 
         <p className="text-xs text-muted-foreground leading-relaxed">{trendText}</p>
       )}
       <ChartContainer config={combinedConfig} style={{ height }} className="w-full aspect-auto">
-        <ResponsiveContainer width="100%" height="100%">
+        {!mounted ? <div className="w-full animate-pulse rounded bg-muted/20" style={{ height }} /> : <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 4, right: 16, left: 4, bottom: 0 }}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
             <XAxis
@@ -545,7 +549,7 @@ export function CombinedCaloriesWeightChart({ summaries, range, height = 260 }: 
               />
             )}
           </LineChart>
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </ChartContainer>
     </div>
   );
