@@ -179,7 +179,11 @@ export function parseVaultEntry(data: Record<string, unknown>): VaultEntry | nul
   if (entryType === 'weight_entry') return parseWeightEntry(normalizeBodyCompFields(data));
   if (entryType === 'daily_summary') return parseDailySummary(normalizeDailySummaryFields(data));
   if (entryType === 'exercise_entry') return parseExerciseEntry(normalizeExerciseFields(data));
-  console.warn('[parseVaultEntry] Unknown entry_type:', entryType);
+  // Known vault entry types the dashboard doesn't handle yet — skip silently
+  const KNOWN_IGNORED = new Set(['sleep_entry', 'mood_entry', 'symptom_entry', 'medication_entry', 'note']);
+  if (!KNOWN_IGNORED.has(entryType as string)) {
+    console.warn('[parseVaultEntry] Unknown entry_type:', entryType);
+  }
   return null;
 }
 
