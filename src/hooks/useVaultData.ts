@@ -260,16 +260,25 @@ export function useVaultData() {
     try {
       // @ts-expect-error — requestPermission is in the WICG File System Access spec
       const perm = await handle.requestPermission({ mode: 'readwrite' });
+      console.log('[confirmEntry] requestPermission result:', perm);
       if (perm !== 'granted') return 'no-write';
-    } catch {
+    } catch (err) {
+      console.warn('[confirmEntry] requestPermission threw:', err);
       return 'no-write';
     }
 
     const entry = data.foodEntries.find((e) => e.id === entryId);
-    if (!entry?.source_file) return 'no-file';
+    if (!entry?.source_file) {
+      console.warn('[confirmEntry] no source_file for entry', entryId);
+      return 'no-file';
+    }
+    console.log('[confirmEntry] source_file:', entry.source_file);
 
     const fileHandle = await navigateToFile(handle, entry.source_file);
-    if (!fileHandle) return 'no-file';
+    if (!fileHandle) {
+      console.warn('[confirmEntry] navigateToFile returned null for', entry.source_file);
+      return 'no-file';
+    }
 
     const file = await fileHandle.getFile();
     const text = await file.text();
@@ -281,13 +290,18 @@ export function useVaultData() {
       review_status: 'confirmed',
       reviewed_at: now,
     });
-    if (!patched) return 'patch-fail';
+    if (!patched) {
+      console.warn('[confirmEntry] patchFrontmatter returned null');
+      return 'patch-fail';
+    }
 
     try {
       const writable = await fileHandle.createWritable();
       await writable.write(patched);
       await writable.close();
-    } catch {
+      console.log('[confirmEntry] write succeeded for', entry.source_file);
+    } catch (err) {
+      console.error('[confirmEntry] createWritable/write failed:', err);
       return 'no-write';
     }
 

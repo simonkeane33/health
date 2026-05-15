@@ -125,7 +125,11 @@ function ReviewItem({
 export function ReviewQueue({ entries, limit = 6, onConfirm, onEdit }: Props) {
   const reviewItems = useMemo(() => {
     return [...entries]
-      .filter((e) => e.needs_review || Number(e.confidence) < LOW_CONFIDENCE_THRESHOLD)
+      .filter((e) =>
+        // Exclude entries the user has already confirmed — regardless of confidence score
+        !e.user_confirmed &&
+        (e.needs_review || Number(e.confidence) < LOW_CONFIDENCE_THRESHOLD)
+      )
       .sort((a, b) => new Date(b.logged_at || b.entry_date).getTime() - new Date(a.logged_at || a.entry_date).getTime())
       .slice(0, limit);
   }, [entries, limit]);
