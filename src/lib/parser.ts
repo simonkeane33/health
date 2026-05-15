@@ -1,6 +1,6 @@
 import * as yaml from 'js-yaml';
-import { FoodEntrySchema, WeightEntrySchema, DailySummarySchema, ExerciseEntrySchema } from './schemas';
-import type { FoodEntry, WeightEntry, DailySummary, ExerciseEntry, VaultEntry } from './schemas';
+import { FoodEntrySchema, WeightEntrySchema, DailySummarySchema, ExerciseEntrySchema, CoachFeedbackSchema } from './schemas';
+import type { FoodEntry, WeightEntry, DailySummary, ExerciseEntry, CoachFeedback, VaultEntry } from './schemas';
 import type { DailyTargets } from './targets';
 
 /* ------------------------------------------------------------------ */
@@ -45,6 +45,11 @@ export function parseDailySummary(data: Record<string, unknown>): DailySummary |
 
 export function parseExerciseEntry(data: Record<string, unknown>): ExerciseEntry | null {
   const result = ExerciseEntrySchema.safeParse(data);
+  return result.success ? result.data : null;
+}
+
+export function parseCoachFeedback(data: Record<string, unknown>): CoachFeedback | null {
+  const result = CoachFeedbackSchema.safeParse(data);
   return result.success ? result.data : null;
 }
 
@@ -179,6 +184,7 @@ export function parseVaultEntry(data: Record<string, unknown>): VaultEntry | nul
   if (entryType === 'weight_entry') return parseWeightEntry(normalizeBodyCompFields(data));
   if (entryType === 'daily_summary') return parseDailySummary(normalizeDailySummaryFields(data));
   if (entryType === 'exercise_entry') return parseExerciseEntry(normalizeExerciseFields(data));
+  if (entryType === 'coach_feedback') return parseCoachFeedback(data);
   // Known vault entry types the dashboard doesn't handle yet — skip silently
   const KNOWN_IGNORED = new Set(['sleep_entry', 'mood_entry', 'symptom_entry', 'medication_entry', 'note']);
   if (!KNOWN_IGNORED.has(entryType as string)) {

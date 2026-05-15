@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { parseVaultFile, extractFrontmatter, parseTargetsConfig } from '@/lib/parser';
 import type { DailyTargets } from '@/lib/targets';
 import { aggregateDailySummaries } from '@/lib/aggregator';
-import type { FoodEntry, WeightEntry, DailySummary, ExerciseEntry } from '@/lib/schemas';
+import type { FoodEntry, WeightEntry, DailySummary, ExerciseEntry, CoachFeedback } from '@/lib/schemas';
 import type { VaultData } from '@/lib/types';
 import { saveVaultHandle, loadVaultHandle, clearVaultHandle } from '@/lib/vault-store';
 import { patchFrontmatter, navigateToFile } from '@/lib/vault-write';
@@ -55,6 +55,7 @@ async function parseFileSources(
   const weightEntries: WeightEntry[] = [];
   const dailySummaries: DailySummary[] = [];
   const exerciseEntries: ExerciseEntry[] = [];
+  const feedbackEntries: CoachFeedback[] = [];
   let vaultTargets: Partial<DailyTargets> | undefined;
 
   const total = sources.length;
@@ -75,6 +76,7 @@ async function parseFileSources(
         else if (entry.entry_type === 'weight_entry') weightEntries.push(entry);
         else if (entry.entry_type === 'daily_summary') dailySummaries.push(entry);
         else if (entry.entry_type === 'exercise_entry') exerciseEntries.push(entry);
+        else if (entry.entry_type === 'coach_feedback') feedbackEntries.push(entry);
       }
     }
 
@@ -91,6 +93,7 @@ async function parseFileSources(
   foodEntries.sort(sortByDate);
   weightEntries.sort(sortByDate);
   exerciseEntries.sort(sortByDate);
+  feedbackEntries.sort(sortByDate);
 
   const mergedSummaries = aggregateDailySummaries(foodEntries, weightEntries, dailySummaries);
 
@@ -99,6 +102,7 @@ async function parseFileSources(
     weightEntries,
     dailySummaries: mergedSummaries,
     exerciseEntries,
+    feedbackEntries,
     allEntries: [...foodEntries, ...weightEntries, ...mergedSummaries, ...exerciseEntries],
     vaultTargets,
   };

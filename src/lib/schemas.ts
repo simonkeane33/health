@@ -17,7 +17,7 @@ const optionalNumber = () =>
 
 const requiredString = () =>
   z
-    .union([z.string(), z.number(), z.date(), z.null()])
+    .union([z.string(), z.number(), z.date(), z.null(), z.undefined()])
     .transform((v) => {
       if (v == null) return '';
       if (v instanceof Date) return v.toISOString().split('T')[0];
@@ -158,15 +158,35 @@ export const ExerciseEntrySchema = z.object({
   review_status: requiredString().default('pending'),
 });
 
+const InsightSchema = z.object({
+  type: z.enum(['positive', 'warning', 'suggestion', 'info']),
+  category: z.enum(['calories', 'protein', 'carbs', 'fat', 'fiber', 'fluids', 'alcohol', 'exercise', 'weight', 'pattern', 'general']),
+  message: z.string(),
+  priority: z.enum(['high', 'medium', 'low']).optional().default('medium'),
+});
+
+export const CoachFeedbackSchema = z.object({
+  id: requiredString(),
+  entry_type: z.literal('coach_feedback'),
+  entry_date: requiredString(),
+  generated_at: requiredString(),
+  period: z.string().optional().default('daily'),
+  summary: z.string().optional(),
+  insights: z.array(InsightSchema).optional().default([]),
+});
+
 export const VaultEntrySchema = z.union([
   FoodEntrySchema,
   WeightEntrySchema,
   DailySummarySchema,
   ExerciseEntrySchema,
+  CoachFeedbackSchema,
 ]);
 
 export type FoodEntry = z.infer<typeof FoodEntrySchema>;
 export type WeightEntry = z.infer<typeof WeightEntrySchema>;
 export type DailySummary = z.infer<typeof DailySummarySchema>;
 export type ExerciseEntry = z.infer<typeof ExerciseEntrySchema>;
+export type CoachFeedback = z.infer<typeof CoachFeedbackSchema>;
+export type Insight = z.infer<typeof InsightSchema>;
 export type VaultEntry = z.infer<typeof VaultEntrySchema>;

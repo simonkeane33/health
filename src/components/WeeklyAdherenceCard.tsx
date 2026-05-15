@@ -76,6 +76,7 @@ export function WeeklyAdherenceCard({ summaries, days = 7 }: Props) {
         unit: 'kcal',
         target: targets.calories_kcal,
         values: sorted.map((s) => s.total_calories),
+        lowerIsBetter: true,
       },
       {
         label: 'Protein',
@@ -139,7 +140,7 @@ export function WeeklyAdherenceCard({ summaries, days = 7 }: Props) {
                     <td className="py-2 pr-4">
                       <div className="font-medium leading-tight">{row.label}</div>
                       <div className="text-[10px] text-muted-foreground">
-                        ≥{row.target.toLocaleString()} {row.unit}
+                        {row.lowerIsBetter ? '≤' : '≥'}{row.target.toLocaleString()} {row.unit}
                       </div>
                     </td>
                     {hits.map((hit, i) => (

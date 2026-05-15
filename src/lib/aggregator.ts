@@ -125,17 +125,18 @@ export function aggregateDailySummaries(
     if (existing) {
       byDate.set(date, {
         ...computed,
-        // Prefer computed (summed from individual entries) when it is non-zero;
-        // fall back to the daily_summary note value for days where no individual
-        // food entry files were parsed (e.g. older summary-only days).
-        total_calories: computed.total_calories || existing.total_calories,
-        protein_g: computed.protein_g || existing.protein_g,
-        carbs_g: computed.carbs_g || existing.carbs_g,
-        fat_g: computed.fat_g || existing.fat_g,
-        fiber_g: computed.fiber_g || existing.fiber_g,
-        sugar_g: computed.sugar_g || existing.sugar_g,
-        fluids_ml: computed.fluids_ml || existing.fluids_ml,
-        alcohol_units: computed.alcohol_units || existing.alcohol_units,
+        // Prefer the daily_summary note values when they are non-zero — the note
+        // is the authoritative rollup written by Hermes after reviewing all entries.
+        // Fall back to the computed sum from individual food_entry files only when
+        // the daily_summary has no value (e.g. older notes missing a field).
+        total_calories: existing.total_calories || computed.total_calories,
+        protein_g: existing.protein_g || computed.protein_g,
+        carbs_g: existing.carbs_g || computed.carbs_g,
+        fat_g: existing.fat_g || computed.fat_g,
+        fiber_g: existing.fiber_g || computed.fiber_g,
+        sugar_g: existing.sugar_g || computed.sugar_g,
+        fluids_ml: existing.fluids_ml || computed.fluids_ml,
+        alcohol_units: existing.alcohol_units || computed.alcohol_units,
         food_entries: computed.food_entries || existing.food_entries,
         needs_review_count: computed.needs_review_count || existing.needs_review_count,
         weight_kg: existing.weight_kg ?? computed.weight_kg,

@@ -99,6 +99,8 @@ export interface ExerciseEntry {
   review_status: string;
 }
 
+export type { CoachFeedback, Insight } from './schemas';
+
 export type VaultEntry = WeightEntry | FoodEntry | DailySummary | ExerciseEntry;
 
 export interface VaultData {
@@ -106,6 +108,7 @@ export interface VaultData {
   weightEntries: WeightEntry[];
   dailySummaries: DailySummary[];
   exerciseEntries: ExerciseEntry[];
+  feedbackEntries: import('./schemas').CoachFeedback[];
   allEntries: VaultEntry[];
   imageMap?: Record<string, string>;
   /** Targets parsed from a Config/targets.md in the vault, if present */

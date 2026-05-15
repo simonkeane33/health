@@ -14,7 +14,8 @@ const LOW_CONFIDENCE_THRESHOLD = 0.8;
 interface Props {
   entries: FoodEntry[];
   limit?: number;
-  onReviewChange?: (id: string, confirmed: boolean) => void;
+  onConfirm?: (id: string) => Promise<string>;
+  onEdit?: (id: string) => void;
 }
 
 function EmptyState({ title, body, icon: Icon }: { title: string; body: string; icon?: typeof UtensilsCrossed }) {
@@ -32,7 +33,7 @@ function EmptyState({ title, body, icon: Icon }: { title: string; body: string; 
   );
 }
 
-export function RecentEntries({ entries, onReviewChange }: Props) {
+export function RecentEntries({ entries, onConfirm, onEdit }: Props) {
   const [showLowConfidence, setShowLowConfidence] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<FoodEntry | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -43,10 +44,10 @@ export function RecentEntries({ entries, onReviewChange }: Props) {
     .sort((a, b) => new Date(b.logged_at || b.entry_date).getTime() - new Date(a.logged_at || a.entry_date).getTime());
 
   const displayed = showLowConfidence
-    ? todays.filter((e) => Number(e.confidence) < LOW_CONFIDENCE_THRESHOLD)
+    ? todays.filter((e) => !e.user_confirmed && Number(e.confidence) < LOW_CONFIDENCE_THRESHOLD)
     : todays;
 
-  const lowCount = todays.filter((e) => Number(e.confidence) < LOW_CONFIDENCE_THRESHOLD).length;
+  const lowCount = todays.filter((e) => !e.user_confirmed && Number(e.confidence) < LOW_CONFIDENCE_THRESHOLD).length;
 
   const handleRowClick = (entry: FoodEntry) => {
     setSelectedEntry(entry);
@@ -136,7 +137,9 @@ export function RecentEntries({ entries, onReviewChange }: Props) {
                     <span className="text-muted-foreground">kcal</span>
                   </td>
                   <td className="hidden sm:table-cell py-3 px-2 border-b border-border">
-                    {entry.needs_review ? (
+                    {entry.user_confirmed ? (
+                      <Badge variant="secondary">Confirmed</Badge>
+                    ) : entry.needs_review ? (
                       <Badge variant="destructive">Needs review</Badge>
                     ) : Number(entry.confidence) < LOW_CONFIDENCE_THRESHOLD ? (
                       <Badge variant="outline" className="text-destructive border-destructive/30">Low confidence</Badge>
@@ -154,6 +157,8 @@ export function RecentEntries({ entries, onReviewChange }: Props) {
         entry={selectedEntry}
         open={panelOpen}
         onClose={handleClosePanel}
+        onConfirm={onConfirm}
+        onEdit={onEdit}
       />
     </Card>
   );

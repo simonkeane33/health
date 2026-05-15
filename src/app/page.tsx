@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { FolderOpen, RefreshCw } from 'lucide-react';
+import { FolderOpen, RefreshCw, ChevronLeft, ChevronRight, Clock, CalendarIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -34,19 +34,115 @@ import { BodyCompositionCard } from '@/components/BodyCompositionCard';
 import { DailyMacroCard } from '@/components/DailyMacroCard';
 import { WeeklyMacroChart } from '@/components/WeeklyMacroChart';
 import { WeeklyAdherenceCard } from '@/components/WeeklyAdherenceCard';
-import { DataHealthCard } from '@/components/DataHealthCard';
 import { TrendInsightStrip } from '@/components/TrendInsightStrip';
+import { CoachFeedbackCard } from '@/components/CoachFeedbackCard';
 import { MealTypeChart } from '@/components/MealTypeChart';
 import { WeekdayPatternsCard } from '@/components/WeekdayPatternsCard';
 import { SectionNav } from '@/components/SectionNav';
 import { TargetsSheet } from '@/components/TargetsSheet';
 import { TargetsProvider, useTargets } from '@/lib/targets-context';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { DEFAULT_TARGETS } from '@/lib/targets';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { EntryEditSheet } from '@/components/EntryEditSheet';
 import type { FoodEntry } from '@/lib/types';
 
 type RangeValue = '7' | '14' | '30' | '90' | '365' | 'all';
+
+/* ------------------------------------------------------------------ */
+/* Time machine date selector                                          */
+/* ------------------------------------------------------------------ */
+
+function DateMachine({ value, onChange }: { value: string; onChange: (d: string) => void }) {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isToday = value === todayStr;
+  const [open, setOpen] = useState(false);
+
+  const selectedDay = new Date(value + 'T00:00:00');
+  const today = new Date(todayStr + 'T00:00:00');
+
+  const shift = (days: number) => {
+    const d = new Date(value + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    const next = d.toISOString().split('T')[0];
+    if (next <= todayStr) onChange(next);
+  };
+
+  const formatted = selectedDay.toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <Clock className={`w-3.5 h-3.5 shrink-0 ${isToday ? 'text-muted-foreground' : 'text-primary'}`} />
+      <span className={`text-xs font-medium ${isToday ? 'text-muted-foreground' : 'text-primary'}`}>
+        {isToday ? 'Today' : 'Time machine'}
+      </span>
+
+      <div className="flex items-center gap-0.5 ml-1">
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => shift(-1)}>
+          <ChevronLeft className="w-3.5 h-3.5" />
+        </Button>
+
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={`h-7 px-2.5 text-xs font-medium gap-1.5 ${
+                isToday ? '' : 'border-primary/50 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary'
+              }`}
+            >
+              <CalendarIcon className="w-3 h-3 shrink-0" />
+              {formatted}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={selectedDay}
+              onSelect={(day) => {
+                if (day) {
+                  const str = day.toISOString().split('T')[0];
+                  if (str <= todayStr) {
+                    onChange(str);
+                    setOpen(false);
+                  }
+                }
+              }}
+              disabled={{ after: today }}
+            />
+          </PopoverContent>
+        </Popover>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
+          onClick={() => shift(1)}
+          disabled={isToday}
+        >
+          <ChevronRight className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+
+      {!isToday && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-6 text-xs px-2"
+          onClick={() => onChange(todayStr)}
+        >
+          Back to today
+        </Button>
+      )}
+    </div>
+  );
+}
 
 function RangeFilter({
   value,
@@ -86,6 +182,7 @@ function HomeInner() {
   const [intakeRange, setIntakeRange] = useState<RangeValue>('30');
   const [weightRange, setWeightRange] = useState<RangeValue>('30');
   const [combinedRange, setCombinedRange] = useState<RangeValue>('30');
+  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const inputRef = useRef<HTMLInputElement>(null);
   const [editingEntry, setEditingEntry] = useState<FoodEntry | null>(null);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
@@ -108,7 +205,7 @@ function HomeInner() {
   }, [data?.vaultTargets, setTargets]);
 
   const loadStatus = data
-    ? `${data.foodEntries.length} food · ${data.weightEntries.length} weight · ${data.exerciseEntries.length} exercise · ${data.dailySummaries.length} days`
+    ? `${data.foodEntries.length} food · ${data.weightEntries.length} weight · ${data.exerciseEntries.length} exercise · ${data.dailySummaries.length} days · ${data.feedbackEntries.length} feedback`
     : 'No notes loaded yet.';
 
   if (error) {
@@ -276,95 +373,108 @@ function HomeInner() {
           <>
             <SectionNav />
 
-            {/* TODAY: KPIs, adherence, data health */}
-            <section id="today" className="flex flex-col gap-4 scroll-mt-20">
-              <KpiGrid data={data} />
-              <TrendInsightStrip summaries={data.dailySummaries} range={combinedRange} />
-              <WeeklyAdherenceCard summaries={data.dailySummaries} />
-              <DataHealthCard data={data} />
-              <BodyCompositionCard summaries={data.dailySummaries} />
-            </section>
+            {/* Derive per-date slices for the time machine */}
+            {(() => {
+              const dayFoodEntries = data.foodEntries.filter((e) => e.entry_date === selectedDate);
+              const dayExerciseEntries = data.exerciseEntries.filter((e) => e.entry_date === selectedDate);
+              const daySummary = data.dailySummaries.find((s) => s.entry_date === selectedDate);
+              const isToday = selectedDate === new Date().toISOString().split('T')[0];
 
-            {/* TRENDS: charts */}
-            <section id="trends" className="flex flex-col gap-4 scroll-mt-20">
-              <Card className="flex flex-col">
-                <CardHeader className="flex flex-row items-center justify-between gap-4">
-                  <div>
-                    <CardDescription>Trend</CardDescription>
-                    <CardTitle>Calories & Weight</CardTitle>
-                  </div>
-                  <RangeFilter value={combinedRange} onChange={setCombinedRange} />
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <CombinedCaloriesWeightChart summaries={data.dailySummaries} range={combinedRange} />
-                </CardContent>
-              </Card>
+              return (
+                <>
+                  {/* TODAY: KPIs, adherence, data health */}
+                  <section id="today" className="flex flex-col gap-4 scroll-mt-20">
+                    <DateMachine value={selectedDate} onChange={setSelectedDate} />
+                    <KpiGrid data={data} selectedDate={selectedDate} />
+                    <CoachFeedbackCard entries={data.feedbackEntries} selectedDate={selectedDate} />
+                    <TrendInsightStrip summaries={data.dailySummaries} range={combinedRange} />
+                    <WeeklyAdherenceCard summaries={data.dailySummaries} />
+                    <BodyCompositionCard summaries={data.dailySummaries} />
+                  </section>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <Card className="flex flex-col">
-                  <CardHeader className="flex flex-row items-center justify-between gap-4">
-                    <div>
-                      <CardDescription>Intake</CardDescription>
-                      <CardTitle>Calories</CardTitle>
+                  {/* TRENDS: charts — always show full history */}
+                  <section id="trends" className="flex flex-col gap-4 scroll-mt-20">
+                    <Card className="flex flex-col">
+                      <CardHeader className="flex flex-row items-center justify-between gap-4">
+                        <div>
+                          <CardDescription>Trend</CardDescription>
+                          <CardTitle>Calories & Weight</CardTitle>
+                        </div>
+                        <RangeFilter value={combinedRange} onChange={setCombinedRange} />
+                      </CardHeader>
+                      <CardContent className="flex-1">
+                        <CombinedCaloriesWeightChart summaries={data.dailySummaries} range={combinedRange} />
+                      </CardContent>
+                    </Card>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <Card className="flex flex-col">
+                        <CardHeader className="flex flex-row items-center justify-between gap-4">
+                          <div>
+                            <CardDescription>Intake</CardDescription>
+                            <CardTitle>Calories</CardTitle>
+                          </div>
+                          <RangeFilter value={intakeRange} onChange={setIntakeRange} />
+                        </CardHeader>
+                        <CardContent className="flex-1">
+                          <IntakeTrendChart summaries={data.dailySummaries} range={intakeRange} />
+                        </CardContent>
+                      </Card>
+
+                      <Card className="flex flex-col">
+                        <CardHeader className="flex flex-row items-center justify-between gap-4">
+                          <div>
+                            <CardDescription>Trend</CardDescription>
+                            <CardTitle>Weight</CardTitle>
+                          </div>
+                          <RangeFilter value={weightRange} onChange={setWeightRange} />
+                        </CardHeader>
+                        <CardContent className="flex-1">
+                          <WeightTrendChart summaries={data.dailySummaries} range={weightRange} />
+                        </CardContent>
+                      </Card>
                     </div>
-                    <RangeFilter value={intakeRange} onChange={setIntakeRange} />
-                  </CardHeader>
-                  <CardContent className="flex-1">
-                    <IntakeTrendChart summaries={data.dailySummaries} range={intakeRange} />
-                  </CardContent>
-                </Card>
+                  </section>
 
-                <Card className="flex flex-col">
-                  <CardHeader className="flex flex-row items-center justify-between gap-4">
-                    <div>
-                      <CardDescription>Trend</CardDescription>
-                      <CardTitle>Weight</CardTitle>
+                  {/* ACTIVITY — filtered to selected date */}
+                  <section id="activity" className="flex flex-col gap-4 scroll-mt-20">
+                    <ExerciseCard entries={dayExerciseEntries} />
+                  </section>
+
+                  {/* ENTRIES — filtered to selected date */}
+                  <section id="entries" className="flex flex-col gap-4 scroll-mt-20">
+                    <RecentEntries entries={dayFoodEntries} onConfirm={handleConfirm} onEdit={handleEdit} />
+                    <DailySummaries entries={data.dailySummaries} />
+                  </section>
+
+                  {/* PATTERNS — always full history */}
+                  <section id="patterns" className="flex flex-col gap-4 scroll-mt-20">
+                    <WeekdayPatternsCard summaries={data.dailySummaries} />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <WeeklyMacroChart summaries={data.dailySummaries} />
+                      <MealTypeChart entries={data.foodEntries} />
                     </div>
-                    <RangeFilter value={weightRange} onChange={setWeightRange} />
-                  </CardHeader>
-                  <CardContent className="flex-1">
-                    <WeightTrendChart summaries={data.dailySummaries} range={weightRange} />
-                  </CardContent>
-                </Card>
-              </div>
-            </section>
+                  </section>
 
-            {/* ACTIVITY */}
-            <section id="activity" className="flex flex-col gap-4 scroll-mt-20">
-              <ExerciseCard entries={data.exerciseEntries} />
-            </section>
-
-            {/* ENTRIES */}
-            <section id="entries" className="flex flex-col gap-4 scroll-mt-20">
-              <RecentEntries entries={data.foodEntries} />
-              <DailySummaries entries={data.dailySummaries} />
-            </section>
-
-            {/* PATTERNS */}
-            <section id="patterns" className="flex flex-col gap-4 scroll-mt-20">
-              <WeekdayPatternsCard summaries={data.dailySummaries} />
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <WeeklyMacroChart summaries={data.dailySummaries} />
-                <MealTypeChart entries={data.foodEntries} />
-              </div>
-            </section>
-
-            {/* REVIEW */}
-            <section id="review" className="flex flex-col gap-4 scroll-mt-20">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-4">
-                  <ReviewQueue entries={data.foodEntries} onConfirm={handleConfirm} onEdit={handleEdit} />
-                  <DailyMacroCard summary={data.dailySummaries[0]} />
-                  <FoodVsDrinkCard entries={data.foodEntries} />
-                  <FrequentFoods entries={data.foodEntries} />
-                </div>
-                <div className="flex flex-col gap-4">
-                  <RecurringFoodsPanel entries={data.foodEntries} />
-                  <RecurringDrinksPanel entries={data.foodEntries} />
-                  <HighestCalorieItems entries={data.foodEntries} />
-                </div>
-              </div>
-            </section>
+                  {/* REVIEW */}
+                  <section id="review" className="flex flex-col gap-4 scroll-mt-20">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-4">
+                        <ReviewQueue entries={isToday ? data.foodEntries : dayFoodEntries} onConfirm={handleConfirm} onEdit={handleEdit} />
+                        <DailyMacroCard summary={daySummary} />
+                        <FoodVsDrinkCard entries={dayFoodEntries} />
+                        <FrequentFoods entries={data.foodEntries} />
+                      </div>
+                      <div className="flex flex-col gap-4">
+                        <RecurringFoodsPanel entries={data.foodEntries} />
+                        <RecurringDrinksPanel entries={data.foodEntries} />
+                        <HighestCalorieItems entries={data.foodEntries} />
+                      </div>
+                    </div>
+                  </section>
+                </>
+              );
+            })()}
 
             {/* Footer info */}
             <div className="flex items-center justify-between text-xs text-muted-foreground py-2">

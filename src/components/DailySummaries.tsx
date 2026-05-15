@@ -5,6 +5,8 @@ import type { DailySummary } from '@/lib/types';
 import { formatDate, formatNumber } from '@/lib/utils';
 import { CalendarDays, ChevronDown, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useTargets } from '@/lib/targets-context';
+import type { DailyTargets } from '@/lib/targets';
 
 type Limit = 7 | 14 | 30 | 0;
 
@@ -15,46 +17,108 @@ const LIMITS: { label: string; value: Limit }[] = [
   { label: 'All', value: 0 },
 ];
 
-function DetailRow({ day }: { day: DailySummary }) {
+/** Plain stat — no target */
+function StatCell({ label, value }: { label: string; value: string }) {
   return (
-    <tr className="bg-muted/30">
-      <td colSpan={10} className="px-4 py-3 border-b border-border">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-1 text-xs text-muted-foreground">
-          {day.protein_g != null && (
-            <span><span className="text-foreground font-medium tabular-nums">{formatNumber(day.protein_g, 0)} g</span> protein</span>
-          )}
-          {day.carbs_g != null && (
-            <span><span className="text-foreground font-medium tabular-nums">{formatNumber(day.carbs_g, 0)} g</span> carbs</span>
-          )}
-          {day.fat_g != null && (
-            <span><span className="text-foreground font-medium tabular-nums">{formatNumber(day.fat_g, 0)} g</span> fat</span>
-          )}
-          {day.fiber_g != null && (
-            <span><span className="text-foreground font-medium tabular-nums">{formatNumber(day.fiber_g, 0)} g</span> fiber</span>
-          )}
-          {day.sugar_g != null && (
-            <span><span className="text-foreground font-medium tabular-nums">{formatNumber(day.sugar_g, 0)} g</span> sugar</span>
-          )}
-          {day.fluids_ml != null && day.fluids_ml > 0 && (
-            <span><span className="text-foreground font-medium tabular-nums">{formatNumber(day.fluids_ml, 0)} ml</span> fluids</span>
-          )}
-          {day.alcohol_units != null && day.alcohol_units > 0 && (
-            <span><span className="text-foreground font-medium tabular-nums">{formatNumber(day.alcohol_units, 1)}</span> alcohol units</span>
-          )}
-          {day.food_entries != null && (
-            <span><span className="text-foreground font-medium tabular-nums">{day.food_entries}</span> food entries</span>
-          )}
-          {day.bmi != null && (
-            <span>BMI <span className="text-foreground font-medium tabular-nums">{formatNumber(day.bmi, 1)}</span></span>
-          )}
-          {day.body_fat_pct != null && (
-            <span><span className="text-foreground font-medium tabular-nums">{formatNumber(day.body_fat_pct, 1)}%</span> body fat</span>
-          )}
-          {day.muscle_mass_pct != null && (
-            <span><span className="text-foreground font-medium tabular-nums">{formatNumber(day.muscle_mass_pct, 1)}%</span> muscle</span>
-          )}
-          {day.body_water_pct != null && (
-            <span><span className="text-foreground font-medium tabular-nums">{formatNumber(day.body_water_pct, 1)}%</span> water</span>
+    <div className="flex flex-col gap-0.5 min-w-[52px]">
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none">{label}</span>
+      <span className="text-sm font-semibold tabular-nums text-foreground">{value}</span>
+    </div>
+  );
+}
+
+/** Stat with target — shows coloured value + mini bar + target label */
+function TargetStatCell({
+  label,
+  actual,
+  target,
+  format,
+  lowerIsBetter = false,
+}: {
+  label: string;
+  actual: number;
+  target: number;
+  format: (v: number) => string;
+  lowerIsBetter?: boolean;
+}) {
+  const ratio = Math.round((actual / target) * 100); // uncapped — used for colour logic
+  const barPct = Math.min(100, ratio);               // capped at 100 — used for bar width only
+
+  // Colour logic mirrors KpiGrid's TargetBar
+  let valueColor: string;
+  let barColor: string;
+  if (lowerIsBetter) {
+    // under/near target = green, slightly over = amber, significantly over = red
+    if (ratio <= 100) { valueColor = 'text-emerald-500'; barColor = 'bg-emerald-500'; }
+    else if (ratio <= 115) { valueColor = 'text-amber-400'; barColor = 'bg-amber-400'; }
+    else { valueColor = 'text-destructive'; barColor = 'bg-destructive'; }
+  } else {
+    // at/above target = green, close = amber, well under = red
+    if (ratio >= 95) { valueColor = 'text-emerald-500'; barColor = 'bg-emerald-500'; }
+    else if (ratio >= 75) { valueColor = 'text-amber-400'; barColor = 'bg-amber-400'; }
+    else { valueColor = 'text-destructive'; barColor = 'bg-destructive'; }
+  }
+
+  return (
+    <div className="flex flex-col gap-1 min-w-[64px]">
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none">{label}</span>
+      <span className={`text-sm font-semibold tabular-nums ${valueColor}`}>{format(actual)}</span>
+      {/* Mini progress bar */}
+      <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+        <div className={`h-full rounded-full ${barColor}`} style={{ width: `${barPct}%` }} />
+      </div>
+      <span className="text-[10px] text-muted-foreground tabular-nums">of {format(target)}</span>
+    </div>
+  );
+}
+
+function DetailRow({ day, targets }: { day: DailySummary; targets: DailyTargets }) {
+  const hasBodyComp = day.bmi != null || day.body_fat_pct != null || day.muscle_mass_pct != null || day.body_water_pct != null;
+
+  return (
+    <tr className="bg-muted/20">
+      <td colSpan={10} className="px-4 py-4 border-b border-border">
+        <div className="flex flex-col sm:flex-row gap-5">
+          {/* Nutrition group */}
+          <div className="flex flex-col gap-2 flex-1">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Nutrition</p>
+            <div className="flex flex-wrap gap-x-5 gap-y-4">
+              {day.total_calories != null && day.total_calories > 0 && (
+                <TargetStatCell label="Calories" actual={day.total_calories} target={targets.calories_kcal}
+                  format={(v) => `${formatNumber(v, 0)} kcal`} lowerIsBetter />
+              )}
+              {day.protein_g != null && day.protein_g > 0 && (
+                <TargetStatCell label="Protein" actual={day.protein_g} target={targets.protein_g}
+                  format={(v) => `${formatNumber(v, 0)} g`} />
+              )}
+              {day.carbs_g != null && day.carbs_g > 0 && (
+                <TargetStatCell label="Carbs" actual={day.carbs_g} target={targets.carbs_g}
+                  format={(v) => `${formatNumber(v, 0)} g`} lowerIsBetter />
+              )}
+              {day.fluids_ml != null && day.fluids_ml > 0 && (
+                <TargetStatCell label="Fluids" actual={day.fluids_ml} target={targets.fluids_ml}
+                  format={(v) => `${formatNumber(v, 0)} ml`} />
+              )}
+              {/* No targets for fat / fiber / sugar — plain cells */}
+              {day.fat_g != null && day.fat_g > 0 && <StatCell label="Fat" value={`${formatNumber(day.fat_g, 0)} g`} />}
+              {day.fiber_g != null && day.fiber_g > 0 && <StatCell label="Fiber" value={`${formatNumber(day.fiber_g, 0)} g`} />}
+              {day.sugar_g != null && day.sugar_g > 0 && <StatCell label="Sugar" value={`${formatNumber(day.sugar_g, 0)} g`} />}
+              {day.alcohol_units != null && day.alcohol_units > 0 && <StatCell label="Alcohol" value={`${formatNumber(day.alcohol_units, 1)} u`} />}
+              {day.food_entries != null && <StatCell label="Entries" value={String(day.food_entries)} />}
+            </div>
+          </div>
+
+          {/* Body composition group */}
+          {hasBodyComp && (
+            <div className="flex flex-col gap-2 sm:border-l sm:border-border sm:pl-5">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Body composition</p>
+              <div className="flex flex-wrap gap-x-5 gap-y-4">
+                {day.bmi != null && <StatCell label="BMI" value={formatNumber(day.bmi, 1)} />}
+                {day.body_fat_pct != null && <StatCell label="Fat" value={`${formatNumber(day.body_fat_pct, 1)}%`} />}
+                {day.muscle_mass_pct != null && <StatCell label="Muscle" value={`${formatNumber(day.muscle_mass_pct, 1)}%`} />}
+                {day.body_water_pct != null && <StatCell label="Water" value={`${formatNumber(day.body_water_pct, 1)}%`} />}
+              </div>
+            </div>
           )}
         </div>
       </td>
@@ -67,6 +131,7 @@ interface Props {
 }
 
 export function DailySummaries({ entries }: Props) {
+  const { targets } = useTargets();
   const [limit, setLimit] = useState<Limit>(7);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -196,7 +261,7 @@ export function DailySummaries({ entries }: Props) {
                       </>
                     )}
                   </tr>
-                  {isExpanded && <DetailRow key={`${day.id}-detail`} day={day} />}
+                  {isExpanded && <DetailRow key={`${day.id}-detail`} day={day} targets={targets} />}
                 </React.Fragment>
               );
             })}

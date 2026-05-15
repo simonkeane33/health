@@ -12,13 +12,24 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { ExternalLink } from 'lucide-react';
+import { Check, ExternalLink, Loader2, Pencil } from 'lucide-react';
 import { useTargets } from '@/lib/targets-context';
+import { useState } from 'react';
+import { SheetFooter } from '@/components/ui/sheet';
+
+const CONFIRM_ERRORS: Record<string, string> = {
+  'no-handle': 'No vault connected.',
+  'no-file':   'File not found in vault.',
+  'no-write':  'Write permission denied — reconnect the vault.',
+  'patch-fail':'Could not update file.',
+};
 
 interface Props {
   entry: FoodEntry | null;
   open: boolean;
   onClose: () => void;
+  onConfirm?: (id: string) => Promise<string>;
+  onEdit?: (id: string) => void;
 }
 
 function NutritionRow({ label, value, unit }: { label: string; value: number | null | undefined; unit: string }) {
@@ -44,9 +55,27 @@ function MetaRow({ label, value }: { label: string; value: string | null | undef
   );
 }
 
-export function EntryDetailPanel({ entry, open, onClose }: Props) {
+export function EntryDetailPanel({ entry, open, onClose, onConfirm, onEdit }: Props) {
   const { vaultName } = useTargets();
+  const [confirming, setConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState('');
+
   if (!entry) return null;
+
+  const needsAction = entry.needs_review || (!entry.user_confirmed && Number(entry.confidence ?? 0) < 0.8);
+
+  const handleConfirm = async () => {
+    if (!onConfirm) return;
+    setConfirming(true);
+    setConfirmError('');
+    const result = await onConfirm(entry.id);
+    setConfirming(false);
+    if (result === 'ok') {
+      onClose();
+    } else {
+      setConfirmError(CONFIRM_ERRORS[result] ?? 'Unknown error.');
+    }
+  };
 
   const displayedConfidence = entry.hermes_confidence ?? entry.confidence ?? 0;
   const confidenceLabel = displayedConfidence >= 0.9 ? 'High' : displayedConfidence >= 0.7 ? 'Medium' : displayedConfidence > 0 ? 'Low' : 'Unknown';
@@ -168,8 +197,11 @@ export function EntryDetailPanel({ entry, open, onClose }: Props) {
               </div>
               <div className="flex justify-between items-center py-2.5">
                 <span className="text-sm text-muted-foreground">Status</span>
-                <Badge variant={entry.needs_review ? 'destructive' : 'secondary'} className="text-xs">
-                  {entry.needs_review ? 'Needs review' : entry.review_status}
+                <Badge
+                  variant={entry.user_confirmed ? 'secondary' : entry.needs_review ? 'destructive' : 'secondary'}
+                  className="text-xs"
+                >
+                  {entry.user_confirmed ? 'Confirmed' : entry.needs_review ? 'Needs review' : (entry.review_status || 'Confirmed')}
                 </Badge>
               </div>
               {entry.reviewed_by && (
@@ -181,6 +213,38 @@ export function EntryDetailPanel({ entry, open, onClose }: Props) {
             </div>
           </section>
         </div>
+
+        {(onConfirm || onEdit) && needsAction && (
+          <SheetFooter className="gap-2 pt-4 pb-2 border-t px-0 sticky bottom-0 bg-background">
+            {confirmError && (
+              <p className="text-xs text-destructive w-full">{confirmError}</p>
+            )}
+            <div className="flex gap-2 w-full">
+              {onEdit && (
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => { onClose(); onEdit(entry.id); }}
+                >
+                  <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                  Edit
+                </Button>
+              )}
+              {onConfirm && (
+                <Button
+                  className="flex-1"
+                  onClick={handleConfirm}
+                  disabled={confirming}
+                >
+                  {confirming
+                    ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    : <Check className="h-3.5 w-3.5 mr-1.5" />}
+                  {confirming ? 'Confirming…' : 'Confirm entry'}
+                </Button>
+              )}
+            </div>
+          </SheetFooter>
+        )}
       </SheetContent>
     </Sheet>
   );
