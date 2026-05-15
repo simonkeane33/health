@@ -132,6 +132,26 @@ function normalizeBodyCompFields(data: Record<string, unknown>): Record<string, 
 }
 
 /**
+ * Normalize Hermes-generated exercise field names → canonical schema names.
+ * e.g. heart_rate_avg → avg_hr, duration_min → moving_time (HH:MM:SS)
+ */
+function normalizeExerciseFields(data: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...data };
+  // HR field name differences between Hermes output and schema
+  if (out.avg_hr === undefined && out.heart_rate_avg !== undefined) out.avg_hr = out.heart_rate_avg;
+  if (out.max_hr === undefined && out.heart_rate_max !== undefined) out.max_hr = out.heart_rate_max;
+  // Convert duration_min (number) → moving_time (HH:MM:SS string)
+  if (out.moving_time === undefined && typeof out.duration_min === 'number') {
+    const totalSeconds = Math.round((out.duration_min as number) * 60);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    out.moving_time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+  return out;
+}
+
+/**
  * Normalize alt total_X_g daily-summary field names → canonical X_g.
  */
 function normalizeDailySummaryFields(data: Record<string, unknown>): Record<string, unknown> {
@@ -158,7 +178,7 @@ export function parseVaultEntry(data: Record<string, unknown>): VaultEntry | nul
   }
   if (entryType === 'weight_entry') return parseWeightEntry(normalizeBodyCompFields(data));
   if (entryType === 'daily_summary') return parseDailySummary(normalizeDailySummaryFields(data));
-  if (entryType === 'exercise_entry') return parseExerciseEntry(data);
+  if (entryType === 'exercise_entry') return parseExerciseEntry(normalizeExerciseFields(data));
   console.warn('[parseVaultEntry] Unknown entry_type:', entryType);
   return null;
 }
