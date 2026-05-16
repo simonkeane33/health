@@ -420,7 +420,8 @@ export function KpiGrid({ data, selectedDate }: { data?: VaultData | null; selec
     );
   }
 
-  const todayDate = selectedDate ?? new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const todayDate = selectedDate ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   // Weight: find entry for selected date, or closest before it
   const latestWeight = data.weightEntries.find((e) => e.entry_date <= todayDate) ?? data.weightEntries[0];
   const prevWeight = data.weightEntries.find((e) => e.entry_date < (latestWeight?.entry_date ?? todayDate));

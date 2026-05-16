@@ -50,22 +50,27 @@ import type { FoodEntry } from '@/lib/types';
 
 type RangeValue = '7' | '14' | '30' | '90' | '365' | 'all';
 
+/** Always returns YYYY-MM-DD in the user's local timezone — never UTC. */
+function localDateStr(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 /* ------------------------------------------------------------------ */
 /* Time machine date selector                                          */
 /* ------------------------------------------------------------------ */
 
 function DateMachine({ value, onChange }: { value: string; onChange: (d: string) => void }) {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localDateStr();
   const isToday = value === todayStr;
   const [open, setOpen] = useState(false);
 
   const selectedDay = new Date(value + 'T00:00:00');
-  const today = new Date(todayStr + 'T00:00:00');
+  const today = new Date(); // use actual now — react-day-picker compares by day
 
   const shift = (days: number) => {
     const d = new Date(value + 'T00:00:00');
     d.setDate(d.getDate() + days);
-    const next = d.toISOString().split('T')[0];
+    const next = localDateStr(d);
     if (next <= todayStr) onChange(next);
   };
 
@@ -107,7 +112,7 @@ function DateMachine({ value, onChange }: { value: string; onChange: (d: string)
               selected={selectedDay}
               onSelect={(day) => {
                 if (day) {
-                  const str = day.toISOString().split('T')[0];
+                  const str = localDateStr(day);
                   if (str <= todayStr) {
                     onChange(str);
                     setOpen(false);
@@ -182,7 +187,7 @@ function HomeInner() {
   const [intakeRange, setIntakeRange] = useState<RangeValue>('30');
   const [weightRange, setWeightRange] = useState<RangeValue>('30');
   const [combinedRange, setCombinedRange] = useState<RangeValue>('30');
-  const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(() => localDateStr());
   const inputRef = useRef<HTMLInputElement>(null);
   const [editingEntry, setEditingEntry] = useState<FoodEntry | null>(null);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
@@ -235,6 +240,10 @@ function HomeInner() {
         </div>
 
         <div className="flex items-center gap-2">
+          {data && !loading && (
+            <DateMachine value={selectedDate} onChange={setSelectedDate} />
+          )}
+
           {data && !loading && (
             <Badge variant="secondary" className="hidden sm:inline-flex">
               <span className="mr-1 inline-block h-2 w-2 rounded-full bg-emerald-500" />
@@ -378,13 +387,12 @@ function HomeInner() {
               const dayFoodEntries = data.foodEntries.filter((e) => e.entry_date === selectedDate);
               const dayExerciseEntries = data.exerciseEntries.filter((e) => e.entry_date === selectedDate);
               const daySummary = data.dailySummaries.find((s) => s.entry_date === selectedDate);
-              const isToday = selectedDate === new Date().toISOString().split('T')[0];
+              const isToday = selectedDate === localDateStr();
 
               return (
                 <>
                   {/* TODAY: KPIs, adherence, data health */}
                   <section id="today" className="flex flex-col gap-4 scroll-mt-20">
-                    <DateMachine value={selectedDate} onChange={setSelectedDate} />
                     <KpiGrid data={data} selectedDate={selectedDate} />
                     <CoachFeedbackCard entries={data.feedbackEntries} selectedDate={selectedDate} />
                     <TrendInsightStrip summaries={data.dailySummaries} range={combinedRange} />
