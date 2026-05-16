@@ -123,20 +123,21 @@ export function aggregateDailySummaries(
 
     const existing = byDate.get(date);
     if (existing) {
+      // When food_entry files exist for this date, their live sum is always more
+      // current than the daily_summary snapshot (which Hermes writes at close-day
+      // and never updates mid-day). Prefer computed when it has entries; fall back
+      // to the daily_summary only for dates where no individual files were parsed.
+      const hasLiveEntries = (computed.food_entries ?? 0) > 0;
       byDate.set(date, {
         ...computed,
-        // Prefer the daily_summary note values when they are non-zero — the note
-        // is the authoritative rollup written by Hermes after reviewing all entries.
-        // Fall back to the computed sum from individual food_entry files only when
-        // the daily_summary has no value (e.g. older notes missing a field).
-        total_calories: existing.total_calories || computed.total_calories,
-        protein_g: existing.protein_g || computed.protein_g,
-        carbs_g: existing.carbs_g || computed.carbs_g,
-        fat_g: existing.fat_g || computed.fat_g,
-        fiber_g: existing.fiber_g || computed.fiber_g,
-        sugar_g: existing.sugar_g || computed.sugar_g,
-        fluids_ml: existing.fluids_ml || computed.fluids_ml,
-        alcohol_units: existing.alcohol_units || computed.alcohol_units,
+        total_calories: hasLiveEntries ? computed.total_calories : (existing.total_calories || computed.total_calories),
+        protein_g: hasLiveEntries ? computed.protein_g : (existing.protein_g || computed.protein_g),
+        carbs_g: hasLiveEntries ? computed.carbs_g : (existing.carbs_g || computed.carbs_g),
+        fat_g: hasLiveEntries ? computed.fat_g : (existing.fat_g || computed.fat_g),
+        fiber_g: hasLiveEntries ? computed.fiber_g : (existing.fiber_g || computed.fiber_g),
+        sugar_g: hasLiveEntries ? computed.sugar_g : (existing.sugar_g || computed.sugar_g),
+        fluids_ml: hasLiveEntries ? computed.fluids_ml : (existing.fluids_ml || computed.fluids_ml),
+        alcohol_units: hasLiveEntries ? computed.alcohol_units : (existing.alcohol_units || computed.alcohol_units),
         food_entries: computed.food_entries || existing.food_entries,
         needs_review_count: computed.needs_review_count || existing.needs_review_count,
         weight_kg: existing.weight_kg ?? computed.weight_kg,
