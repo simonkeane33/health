@@ -215,7 +215,7 @@ export function EntryDetailPanel({ entry, open, onClose, onConfirm, onEdit }: Pr
         </div>
 
         {(onConfirm || onEdit) && needsAction && (
-          <SheetFooter className="gap-2 pt-4 pb-2 border-t px-0 sticky bottom-0 bg-background">
+          <SheetFooter className="gap-2 pt-4 pb-2 border-t px-0 sticky bottom-0 bg-popover">
             {confirmError && (
               <p className="text-xs text-destructive w-full">{confirmError}</p>
             )}
