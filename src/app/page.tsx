@@ -185,7 +185,7 @@ function HomeInner() {
   const { data, loading, error, progress, supportsDirectoryPicker, savedVaultName, reconnectNeeded, reconnect, refresh, openDirectoryPicker, loadFiles, clearData, confirmEntry, editEntry: editEntryFn } = useVaultData();
   const { setTargets } = useTargets();
   const [intakeRange, setIntakeRange] = useState<RangeValue>('30');
-  const [weightRange, setWeightRange] = useState<RangeValue>('30');
+  const [weightRange, setWeightRange] = useState<RangeValue>('365');
   const [combinedRange, setCombinedRange] = useState<RangeValue>('30');
   const [selectedDate, setSelectedDate] = useState<string>(() => localDateStr());
   const inputRef = useRef<HTMLInputElement>(null);
